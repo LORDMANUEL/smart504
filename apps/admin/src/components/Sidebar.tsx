@@ -7,6 +7,9 @@ import { cn } from '@ecommerce/ui';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/dashboard/users', label: 'Users' },
+  { href: '/dashboard/productos', label: 'Productos' },
+  { href: '/dashboard/categorias', label: 'Categorías' },
+  { href: '/dashboard/marcas', label: 'Marcas' },
   // Add other navigation items here
 ];
 

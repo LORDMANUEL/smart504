@@ -2,7 +2,11 @@ import axios from 'axios';
 
 // Re-export DTOs and types from the new types package
 export * from '@ecommerce/types';
-import { CreateUserDto, UpdateUserDto } from '@ecommerce/types';
+import {
+  CreateUserDto, UpdateUserDto,
+  CreateProductoDto, UpdateProductoDto,
+  CreateStockDto, UpdateStockDto
+} from '@ecommerce/types';
 
 
 const apiClient = axios.create({
@@ -40,6 +44,59 @@ export const auth = {
   },
   getProfile: async () => {
     const response = await apiClient.get('/auth/profile');
+    return response.data;
+  },
+};
+
+// Catalog Endpoints
+export const productos = {
+  getAll: async () => {
+    const response = await apiClient.get('/productos');
+    return response.data;
+  },
+  getOne: async (id: string) => {
+    const response = await apiClient.get(`/productos/${id}`);
+    return response.data;
+  },
+  create: async (data: CreateProductoDto) => {
+    const response = await apiClient.post('/productos', data);
+    return response.data;
+  },
+  update: async (id: string, data: UpdateProductoDto) => {
+    const response = await apiClient.patch(`/productos/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/productos/${id}`);
+    return response.data;
+  },
+};
+
+export const categorias = {
+  getAll: async () => {
+    const response = await apiClient.get('/categorias');
+    return response.data;
+  },
+};
+
+export const marcas = {
+  getAll: async () => {
+    const response = await apiClient.get('/marcas');
+    return response.data;
+  },
+};
+
+export const stock = {
+  create: async (data: CreateStockDto) => {
+    const response = await apiClient.post('/stock', data);
+    return response.data;
+  },
+  update: async (id: string, data: UpdateStockDto) => {
+    const response = await apiClient.patch(`/stock/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/stock/${id}`);
     return response.data;
   },
 };
