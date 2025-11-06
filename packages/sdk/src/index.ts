@@ -1,0 +1,69 @@
+import axios from 'axios';
+
+// Re-export DTOs and types from the new types package
+export * from '@ecommerce/types';
+import { CreateUserDto, UpdateUserDto } from '@ecommerce/types';
+
+
+const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+let accessToken: string | null = null;
+
+export const setAccessToken = (token: string | null) => {
+  accessToken = token;
+};
+
+apiClient.interceptors.request.use(
+  (config) => {
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Auth Endpoints
+export const auth = {
+  login: async (credentials: { email: string; password: string }) => {
+    const response = await apiClient.post('/auth/login', credentials);
+    return response.data;
+  },
+  register: async (userData: CreateUserDto) => {
+    const response = await apiClient.post('/auth/register', userData);
+    return response.data;
+  },
+  getProfile: async () => {
+    const response = await apiClient.get('/auth/profile');
+    return response.data;
+  },
+};
+
+// User Endpoints
+export const users = {
+  getAll: async () => {
+    const response = await apiClient.get('/users');
+    return response.data;
+  },
+  getOne: async (id: string) => {
+    const response = await apiClient.get(`/users/${id}`);
+    return response.data;
+  },
+  create: async (userData: CreateUserDto) => {
+    const response = await apiClient.post('/users', userData);
+    return response.data;
+  },
+  update: async (id: string, updates: UpdateUserDto) => {
+    const response = await apiClient.patch(`/users/${id}`, updates);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/users/${id}`);
+    return response.data;
+  },
+};

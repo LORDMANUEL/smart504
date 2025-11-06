@@ -1,7 +1,6 @@
-import React from 'react';
-
-export const Button = () => {
-  return <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-    Click me
-  </button>;
-};
+export * from './components/Button';
+export * from './components/Input';
+export * from './components/Card';
+export * from './components/Table';
+export * from './components/AdminLayout';
+export * from './lib/utils';

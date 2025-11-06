@@ -1,0 +1,3 @@
+
+> api@0.0.1 start:dev /app/services/api
+> nest start --watch
