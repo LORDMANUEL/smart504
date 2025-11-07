@@ -5,7 +5,8 @@ export * from '@ecommerce/types';
 import {
   CreateUserDto, UpdateUserDto,
   CreateProductoDto, UpdateProductoDto,
-  CreateStockDto, UpdateStockDto
+  CreateStockDto, UpdateStockDto,
+  FindAllProductosDto
 } from '@ecommerce/types';
 
 
@@ -50,8 +51,8 @@ export const auth = {
 
 // Catalog Endpoints
 export const productos = {
-  getAll: async () => {
-    const response = await apiClient.get('/productos');
+  getAll: async (params?: FindAllProductosDto) => {
+    const response = await apiClient.get('/productos', { params });
     return response.data;
   },
   getOne: async (id: string) => {

@@ -3,4 +3,8 @@ export * from './components/Input';
 export * from './components/Card';
 export * from './components/Table';
 export * from './components/AdminLayout';
+export * from './components/ProductCard';
+export * from './components/Header';
+export * from './components/Footer';
+export * from './components/SearchBar';
 export * from './lib/utils';

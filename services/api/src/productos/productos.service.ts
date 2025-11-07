@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
+import { FindAllProductosDto } from './dto/findall-producto.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProductosService {
@@ -11,8 +13,40 @@ export class ProductosService {
     return this.prisma.producto.create({ data: createProductoDto });
   }
 
-  findAll() {
-    return this.prisma.producto.findMany({ include: { stocks: true } });
+  async findAll(query: FindAllProductosDto) {
+    const { page = '1', limit = '10', categoria, marca, search } = query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: Prisma.ProductoWhereInput = {};
+    if (categoria) where.categoria = categoria;
+    if (marca) where.marca = marca;
+    if (search) {
+      where.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { oem: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [productos, total] = await this.prisma.$transaction([
+      this.prisma.producto.findMany({
+        where,
+        skip,
+        take: limitNum,
+        include: { stocks: true },
+      }),
+      this.prisma.producto.count({ where }),
+    ]);
+
+    return {
+      data: productos,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+    };
   }
 
   async findOne(id: string) {
