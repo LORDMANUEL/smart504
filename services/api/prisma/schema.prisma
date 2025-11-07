@@ -28,6 +28,7 @@ enum ClientType {
 }
 
 enum OrderStatus {
+  CARRITO
   PENDIENTE
   PROCESANDO
   ENVIADO

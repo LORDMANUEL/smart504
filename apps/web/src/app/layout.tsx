@@ -1,21 +1,42 @@
+'use client';
+
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Header, HeaderNav, HeaderTitle, Footer, SearchBar } from '@ecommerce/ui';
+import { Header, HeaderNav, HeaderTitle, HeaderCart, Footer, SearchBar } from '@ecommerce/ui';
 import Link from 'next/link';
+import { useCartStore } from '../stores/cartStore';
+import { useAuthStore } from '../stores/authStore';
+import { useEffect } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'E-Commerce de Repuestos',
-  description: 'La mejor selección de repuestos para tu vehículo.',
-};
+// Metadata cannot be in a client component, so we keep it separate or define it statically.
+// export const metadata: Metadata = { ... };
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { cart, fetchCart, clearCart } = useCartStore();
+  const { user, logout: logoutUser } = useAuthStore();
+
+  useEffect(() => {
+    if (user) {
+      fetchCart();
+    } else {
+      clearCart();
+    }
+  }, [user, fetchCart, clearCart]);
+
+  const handleLogout = () => {
+    logoutUser();
+    clearCart();
+  };
+
+  const itemCount = cart?.items ? (cart.items as any[]).reduce((sum, item) => sum + item.cantidad, 0) : 0;
+
   return (
     <html lang="es">
       <body className={`${inter.className} bg-gray-100`}>
@@ -29,7 +50,17 @@ export default function RootLayout({
             </HeaderNav>
             <div className="flex flex-1 items-center justify-end space-x-4">
                 <SearchBar placeholder="Buscar por SKU, OEM..." />
-                {/* Add cart and user icons here */}
+                <HeaderCart itemCount={itemCount} />
+                {user ? (
+                  <div>
+                    <span>{user.name}</span>
+                    <Button onClick={handleLogout} variant="ghost" size="sm">Logout</Button>
+                  </div>
+                ) : (
+                  <Button asChild>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                )}
             </div>
         </Header>
         <main className="container mx-auto py-8">

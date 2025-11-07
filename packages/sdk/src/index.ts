@@ -6,7 +6,10 @@ import {
   CreateUserDto, UpdateUserDto,
   CreateProductoDto, UpdateProductoDto,
   CreateStockDto, UpdateStockDto,
-  FindAllProductosDto
+  FindAllProductosDto,
+  AddToCartDto, UpdateCartItemDto,
+  CreateCotizacionDto, UpdateCotizacionDto,
+  CreateWorkOrderDto, UpdateWorkOrderDto
 } from '@ecommerce/types';
 
 
@@ -45,6 +48,74 @@ export const auth = {
   },
   getProfile: async () => {
     const response = await apiClient.get('/auth/profile');
+    return response.data;
+  },
+};
+
+// Work Orders Endpoints
+export const ordenesTrabajo = {
+  getAll: async () => {
+    const response = await apiClient.get('/ordenes-trabajo');
+    return response.data;
+  },
+  getOne: async (id: string) => {
+    const response = await apiClient.get(`/ordenes-trabajo/${id}`);
+    return response.data;
+  },
+  create: async (data: CreateWorkOrderDto) => {
+    const response = await apiClient.post('/ordenes-trabajo', data);
+    return response.data;
+  },
+  update: async (id: string, data: UpdateWorkOrderDto) => {
+    const response = await apiClient.patch(`/ordenes-trabajo/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/ordenes-trabajo/${id}`);
+    return response.data;
+  },
+};
+
+// Quotes Endpoints
+export const cotizaciones = {
+  getAll: async () => {
+    const response = await apiClient.get('/cotizaciones');
+    return response.data;
+  },
+  getOne: async (id: string) => {
+    const response = await apiClient.get(`/cotizaciones/${id}`);
+    return response.data;
+  },
+  create: async (data: CreateCotizacionDto) => {
+    const response = await apiClient.post('/cotizaciones', data);
+    return response.data;
+  },
+  update: async (id: string, data: UpdateCotizacionDto) => {
+    const response = await apiClient.patch(`/cotizaciones/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/cotizaciones/${id}`);
+    return response.data;
+  },
+};
+
+// Cart Endpoints
+export const carrito = {
+  get: async () => {
+    const response = await apiClient.get('/carrito');
+    return response.data;
+  },
+  add: async (data: AddToCartDto) => {
+    const response = await apiClient.post('/carrito', data);
+    return response.data;
+  },
+  update: async (productoId: string, data: UpdateCartItemDto) => {
+    const response = await apiClient.patch(`/carrito/${productoId}`, data);
+    return response.data;
+  },
+  remove: async (productoId: string) => {
+    const response = await apiClient.delete(`/carrito/${productoId}`);
     return response.data;
   },
 };

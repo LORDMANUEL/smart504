@@ -7,4 +7,6 @@ export * from './components/ProductCard';
 export * from './components/Header';
 export * from './components/Footer';
 export * from './components/SearchBar';
+export * from './components/CartItem';
+export * from './components/CartSummary';
 export * from './lib/utils';

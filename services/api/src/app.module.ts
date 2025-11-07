@@ -9,6 +9,9 @@ import { StockModule } from './stock/stock.module';
 import { MarcasModule } from './marcas/marcas.module';
 import { CategoriasModule } from './categorias/categorias.module';
 import { ProductosModule } from './productos/productos.module';
+import { CartModule } from './cart/cart.module';
+import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
+import { WorkOrdersModule } from './work-orders/work-orders.module';
 
 @Module({
   imports: [
@@ -23,6 +26,9 @@ import { ProductosModule } from './productos/productos.module';
     CategoriasModule,
     MarcasModule,
     StockModule,
+    CartModule,
+    CotizacionesModule,
+    WorkOrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

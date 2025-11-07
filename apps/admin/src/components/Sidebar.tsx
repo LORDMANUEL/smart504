@@ -8,6 +8,8 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/dashboard/users', label: 'Users' },
   { href: '/dashboard/productos', label: 'Productos' },
+  { href: '/dashboard/cotizaciones', label: 'Cotizador' },
+  { href: '/dashboard/ordenes-trabajo', label: 'Órdenes de Trabajo' },
   { href: '/dashboard/categorias', label: 'Categorías' },
   { href: '/dashboard/marcas', label: 'Marcas' },
   // Add other navigation items here
