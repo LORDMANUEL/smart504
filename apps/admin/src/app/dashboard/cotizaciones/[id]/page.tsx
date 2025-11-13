@@ -3,10 +3,27 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { cotizaciones as cotizacionesApi, ordenesTrabajo as otApi, Cotizacion } from '@ecommerce/sdk';
-import { Button, Card, CardHeader, CardTitle, CardContent } from '@ecommerce/ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@ecommerce/ui';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { CotizacionPDF } from '../../../components/CotizacionPDF';
 import { useRouter } from 'next/navigation';
+
+interface Vehiculo {
+  marca: string;
+  modelo: string;
+  anio: string;
+}
+interface LineaParte {
+  nombre: string;
+  cantidad: number;
+  precio: number;
+}
+interface LineaManoObra {
+    descripcion: string;
+    tiempo: number;
+    costo: number;
+}
+
 
 export default function EditCotizacionPage() {
   const [cotizacion, setCotizacion] = useState<Cotizacion | null>(null);
@@ -67,14 +84,14 @@ export default function EditCotizacionPage() {
       <CardContent className="space-y-6">
         <div>
           <h3 className="font-bold text-lg mb-2">Vehículo</h3>
-          <p>{(cotizacion.vehiculo as any).marca} {(cotizacion.vehiculo as any).modelo} {(cotizacion.vehiculo as any).anio}</p>
+          <p>{(cotizacion.vehiculo as Vehiculo).marca} {(cotizacion.vehiculo as Vehiculo).modelo} {(cotizacion.vehiculo as Vehiculo).anio}</p>
         </div>
         <div>
           <h3 className="font-bold text-lg mb-2">Partes</h3>
           <Table>
             <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio</TableHead><TableHead>Subtotal</TableHead></TableRow></TableHeader>
             <TableBody>
-              {(cotizacion.lineasPartes as any[]).map((p, i) => (
+              {(cotizacion.lineasPartes as LineaParte[]).map((p, i) => (
                 <TableRow key={i}>
                   <TableCell>{p.nombre}</TableCell>
                   <TableCell>{p.cantidad}</TableCell>
@@ -90,7 +107,7 @@ export default function EditCotizacionPage() {
            <Table>
             <TableHeader><TableRow><TableHead>Descripción</TableHead><TableHead>Tiempo</TableHead><TableHead>Costo</TableHead></TableRow></TableHeader>
             <TableBody>
-              {(cotizacion.lineasManoObra as any[]).map((m, i) => (
+              {(cotizacion.lineasManoObra as LineaManoObra[]).map((m, i) => (
                 <TableRow key={i}>
                   <TableCell>{m.descripcion}</TableCell>
                   <TableCell>{m.tiempo}h</TableCell>

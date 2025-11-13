@@ -3,7 +3,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Header, HeaderNav, HeaderTitle, HeaderCart, Footer, SearchBar } from '@ecommerce/ui';
+import { Header, HeaderNav, HeaderTitle, HeaderCart, Footer, SearchBar, Button } from '@ecommerce/ui';
 import Link from 'next/link';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';

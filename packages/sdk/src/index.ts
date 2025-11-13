@@ -52,6 +52,14 @@ export const auth = {
   },
 };
 
+// Dashboard Endpoints
+export const dashboard = {
+  getSummary: async () => {
+    const response = await apiClient.get('/dashboard/summary');
+    return response.data;
+  },
+};
+
 // Work Orders Endpoints
 export const ordenesTrabajo = {
   getAll: async () => {

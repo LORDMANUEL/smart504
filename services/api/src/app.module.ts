@@ -12,6 +12,7 @@ import { ProductosModule } from './productos/productos.module';
 import { CartModule } from './cart/cart.module';
 import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
 import { WorkOrdersModule } from './work-orders/work-orders.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { WorkOrdersModule } from './work-orders/work-orders.module';
     CartModule,
     CotizacionesModule,
     WorkOrdersModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

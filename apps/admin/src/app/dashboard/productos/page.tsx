@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { productos as productosApi, Producto } from '@ecommerce/sdk';
 import { Button, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@ecommerce/ui';
 import Link from 'next/link';
+import { unparse } from 'papaparse';
 
 export default function ProductosPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -20,13 +21,27 @@ export default function ProductosPage() {
     fetchProductos();
   }, []);
 
+  const handleExport = () => {
+    const csv = unparse(productos);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'productos.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Product Management</h1>
-        <Button asChild>
-          <Link href="/dashboard/productos/new">Create Product</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleExport} variant="ghost">Exportar a CSV</Button>
+          <Button asChild>
+            <Link href="/dashboard/productos/new">Create Product</Link>
+          </Button>
+        </div>
       </div>
       <Table>
         <TableHeader>
