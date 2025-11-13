@@ -1,0 +1,286 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+
+enum UserRole {
+  ADMIN
+  GERENTE
+  VENTAS
+  TECNICO
+  CAJA
+  BODEGA
+  INVITADO
+}
+
+enum ClientType {
+  B2C
+  B2B
+}
+
+enum OrderStatus {
+  CARRITO
+  PENDIENTE
+  PROCESANDO
+  ENVIADO
+  ENTREGADO
+  CANCELADO
+}
+
+enum PaymentStatus {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+}
+
+enum QuoteStatus {
+  BORRADOR
+  ENVIADO
+  ACEPTADO
+  RECHAZADO
+  CONVERTIDO_OT
+}
+
+enum WorkOrderStatus {
+  PENDIENTE
+  DIAGNOSTICO
+  ESPERA_APROBACION
+  EN_REPARACION
+  FINALIZADO
+  ENTREGADO
+  CANCELADO
+}
+
+enum InventoryMovementType {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+// MODELS
+
+model Usuario {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  role      UserRole
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  OrdenesDeTrabajo OrdenDeTrabajo[]
+  Bitacoras Bitacora[]
+}
+
+model Producto {
+  id            String   @id @default(cuid())
+  sku           String   @unique
+  oem           String?
+  nombre        String
+  marca         String
+  categoria     String
+  descripcion   String?
+  fotos         Json     @default("[]") // Array of URLs
+  precioBase    Float
+  impuestos     Json     @default("[]") // Array of tax rates or IDs
+  compatibilidad Json    @default("[]") // Array of {marca, modelo, anio, motor}
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  stocks        Stock[]
+  movimientos   InventarioMov[]
+  kitItems      KitItem[] @relation("KitBase")
+  kits          KitItem[] @relation("KitComponent")
+}
+
+model Stock {
+  id        String   @id @default(cuid())
+  productoId String
+  almacen   String
+  ubicacion String?
+  cantidad  Int
+  min       Int?
+  max       Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  producto  Producto @relation(fields: [productoId], references: [id])
+}
+
+model KitItem {
+  id              String   @id @default(cuid())
+  kitProductoId   String
+  componenteId    String
+  cantidad        Int
+
+  kitProducto     Producto @relation("KitBase", fields: [kitProductoId], references: [id])
+  componente      Producto @relation("KitComponent", fields: [componenteId], references: [id])
+
+  @@unique([kitProductoId, componenteId])
+}
+
+
+model Cliente {
+  id              String   @id @default(cuid())
+  tipo            ClientType
+  nombre          String
+  razonSocial     String?
+  rtn             String?  @unique
+  contactos       Json     @default("[]") // Array of {nombre, telefono, email}
+  direcciones     Json     @default("[]") // Array of shipping/billing addresses
+  condicionPago   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pedidos         Pedido[]
+  facturas        Factura[]
+  cotizaciones    Cotizacion[]
+}
+
+model Pedido {
+  id        String      @id @default(cuid())
+  clienteId String
+  items     Json        // Array of {productoId, sku, nombre, cantidad, precio}
+  envio     Json?       // Shipping details {direccion, costo, metodo}
+  estado    OrderStatus @default(PENDIENTE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  pagos     Pago[]
+}
+
+model Pago {
+  id          String        @id @default(cuid())
+  pedidoId    String
+  gateway     String
+  referencia  String
+  monto       Float
+  estado      PaymentStatus @default(PENDIENTE)
+  createdAt   DateTime      @default(now())
+
+  pedido      Pedido @relation(fields: [pedidoId], references: [id])
+}
+
+model Cotizacion {
+  id                String       @id @default(cuid())
+  clienteId         String?
+  vehiculo          Json         // {marca, modelo, anio, motor, vin}
+  lineasManoObra    Json         @default("[]") // Array of {descripcion, tiempo, costo}
+  lineasPartes      Json         @default("[]") // Array of {productoId, sku, cantidad, precio}
+  total             Float
+  estado            QuoteStatus  @default(BORRADOR)
+  aprobaciones      Json         @default("[]") // Array of {fecha, persona}
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  cliente           Cliente? @relation(fields: [clienteId], references: [id])
+  ordenDeTrabajo    OrdenDeTrabajo?
+}
+
+model OrdenDeTrabajo {
+  id                String          @id @default(cuid())
+  cotizacionId      String?         @unique
+  vehiculo          Json            // {marca, modelo, anio, motor, vin}
+  tecnicoAsignadoId String?
+  lineas            Json            // {manoObra: [], partes: []}
+  tiempos           Json?           // {estimado, real}
+  consumosInventario Json           @default("[]") // Array of {productoId, cantidad, fecha}
+  estado            WorkOrderStatus @default(PENDIENTE)
+  fotos             Json            @default("[]") // URLs of check-in/out photos
+  firmaEntregaUrl   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  cotizacion        Cotizacion?     @relation(fields: [cotizacionId], references: [id])
+  tecnicoAsignado   Usuario?        @relation(fields: [tecnicoAsignadoId], references: [id])
+  facturas          Factura[]
+}
+
+model Factura {
+  id             String    @id @default(cuid())
+  clienteId      String
+  ordenDeTrabajoId String?
+  serie          String
+  correlativo    String
+  lineas         Json      // Array of {descripcion, cantidad, precio}
+  impuestos      Json      // {nombre, tasa, monto}
+  totales        Json      // {subtotal, impuestos, total}
+  pdfUrl         String?
+  createdAt      DateTime  @default(now())
+
+  cliente        Cliente        @relation(fields: [clienteId], references: [id])
+  ordenDeTrabajo OrdenDeTrabajo? @relation(fields: [ordenDeTrabajoId], references: [id])
+
+  @@unique([serie, correlativo])
+}
+
+model InventarioMov {
+  id          String                @id @default(cuid())
+  productoId  String
+  tipo        InventoryMovementType
+  cantidad    Int
+  almacen     String
+  motivo      String?
+  referencia  String? // e.g., OT-123, OC-456, VENTA-789
+  createdAt   DateTime              @default(now())
+
+  producto    Producto @relation(fields: [productoId], references: [id])
+}
+
+model Proveedor {
+  id              String   @id @default(cuid())
+  nombre          String
+  rtn             String?
+  contacto        Json     // {nombre, telefono, email}
+  direccion       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ordenesDeCompra OrdenDeCompra[]
+}
+
+model OrdenDeCompra {
+  id          String   @id @default(cuid())
+  proveedorId String
+  items       Json     // Array of {productoId, cantidad, costo}
+  estado      String   // PENDIENTE, RECIBIDA_PARCIAL, RECIBIDA_COMPLETA
+  fechaEntregaEst DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
+  recepciones Recepcion[]
+}
+
+model Recepcion {
+  id              String   @id @default(cuid())
+  ordenDeCompraId String
+  itemsRecibidos  Json     // Array of {productoId, cantidadRecibida}
+  fecha           DateTime @default(now())
+  notas           String?
+
+  ordenDeCompra   OrdenDeCompra @relation(fields: [ordenDeCompraId], references: [id])
+}
+
+model Bitacora {
+  id        String   @id @default(cuid())
+  tabla     String
+  registroId String
+  accion    String   // CREATE, UPDATE, DELETE
+  antes     Json?
+  despues   Json
+  usuarioId String
+  fecha     DateTime @default(now())
+
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+}
