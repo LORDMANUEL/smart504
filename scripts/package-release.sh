@@ -19,6 +19,7 @@ find . -type f \
   ! -path '*/.pytest_cache/*' \
   ! -path '*/.ruff_cache/*' \
   ! -path '*/__pycache__/*' \
+  ! -path '*/*.egg-info/*' \
   ! -path '*/backups/*' \
   ! -name '*.pyc' \
   ! -name '.env' \
@@ -45,7 +46,7 @@ with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9
     for path in sorted(root.rglob('*')):
         if not path.is_file():
             continue
-        if any(part in exclude_parts for part in path.parts):
+        if any(part in exclude_parts or part.endswith('.egg-info') for part in path.parts):
             continue
         if path.name in exclude_names or path.suffix == '.pyc':
             continue
