@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "vehicle",
+  "service_order",
+  "check_in",
+  "technician",
+  "started_at",
+  "completed_at",
+  "scanner",
+  "odometer",
+  "dtc_summary",
+  "findings",
+  "diagnosis",
+  "recommendation",
+  "confidence",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "Vehicle",
+   "options": "SmartDiag Vehicle",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "service_order",
+   "fieldtype": "Link",
+   "label": "Service Order",
+   "options": "Service Order",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "check_in",
+   "fieldtype": "Link",
+   "label": "Check In",
+   "options": "Vehicle Check In"
+  },
+  {
+   "fieldname": "technician",
+   "fieldtype": "Link",
+   "label": "Technician",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Started At"
+  },
+  {
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "label": "Completed At"
+  },
+  {
+   "fieldname": "scanner",
+   "fieldtype": "Data",
+   "label": "Scanner"
+  },
+  {
+   "fieldname": "odometer",
+   "fieldtype": "Int",
+   "label": "Odometer"
+  },
+  {
+   "fieldname": "dtc_summary",
+   "fieldtype": "Small Text",
+   "label": "DTC Summary"
+  },
+  {
+   "fieldname": "findings",
+   "fieldtype": "Table",
+   "label": "Findings",
+   "options": "Diagnostic Finding"
+  },
+  {
+   "fieldname": "diagnosis",
+   "fieldtype": "Long Text",
+   "label": "Diagnosis"
+  },
+  {
+   "fieldname": "recommendation",
+   "fieldtype": "Long Text",
+   "label": "Recommendation"
+  },
+  {
+   "fieldname": "confidence",
+   "fieldtype": "Select",
+   "label": "Confidence",
+   "options": "LOW\nMEDIUM\nHIGH\nCONFIRMED",
+   "default": "MEDIUM"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "DRAFT\nIN_PROGRESS\nCOMPLETED\nVOID",
+   "default": "DRAFT",
+   "in_list_view": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SmartDiag Workshop",
+ "name": "Diagnostic Session",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "format:SD-DIAG-{YYYY}-{#####}",
+ "naming_rule": "Expression",
+ "is_submittable": 1,
+ "title_field": "vehicle"
+}

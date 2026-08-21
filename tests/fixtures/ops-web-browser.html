@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es-HN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="SmartDiag504 Workshop OS: operación de taller, técnicos, bahías, repuestos, alertas y caja.">
+  <meta name="theme-color" content="#071827">
+  <title>SmartDiag504 Workshop OS</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="../../packages/design-system/assets/smartdiag504-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../packages/design-system/tokens.css">
+  <link rel="stylesheet" href="../../packages/design-system/components.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="sd-skip-link" href="#ops-main">Saltar al contenido</a>
+  <div class="ops-shell">
+    <aside class="ops-sidebar" id="ops-sidebar" aria-label="Navegación de SmartDiag504">
+      <div class="ops-brand">
+        <img src="../../packages/design-system/assets/smartdiag504-mark.svg" width="42" height="42" alt="">
+        <span><strong>SmartDiag</strong><b>504</b><small>Workshop OS</small></span>
+      </div>
+      <nav class="ops-nav" aria-label="Módulos">
+        <button type="button" data-view-target="dashboard" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 4h6v7H4zM14 4h6v4h-6zM14 12h6v8h-6zM4 15h6v5H4z"/></svg><span>Hoy</span></button>
+        <button type="button" data-view-target="orders"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6zM9 7h6M9 11h6M9 15h4"/></svg><span>Órdenes</span><em>18</em></button>
+        <button type="button" data-view-target="workshop"><svg viewBox="0 0 24 24"><path d="M3 10h18v10H3zM6 10V7h4v3M14 10V5h4v5M7 15h3M14 15h3"/></svg><span>Taller</span></button>
+        <button type="button" data-view-target="parts"><svg viewBox="0 0 24 24"><path d="m12 3 8 4-8 4-8-4 8-4ZM4 7v10l8 4 8-4V7M12 11v10"/></svg><span>Repuestos</span><em>4</em></button>
+        <button type="button" data-view-target="alerts"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span>Alertas</span><em class="nav-danger">3</em></button>
+        <button type="button" data-view-target="cash"><svg viewBox="0 0 24 24"><path d="M3 6h18v13H3zM7 10h4M7 14h2M16 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg><span>Caja</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="system-state"><i></i><span><strong>Sistema conectado</strong><small>Última sincronización ahora</small></span></div>
+      <button class="sidebar-user" type="button"><span>LR</span><div><strong>Luis Rivera</strong><small>Administrador</small></div><b>···</b></button>
+    </aside>
+
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+
+    <div class="ops-workspace">
+      <header class="ops-topbar">
+        <button class="menu-trigger" id="menu-trigger" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="ops-sidebar"><span></span><span></span><span></span></button>
+        <div class="branch-switcher"><span>Sucursal</span><button type="button">San Pedro Sula <svg viewBox="0 0 20 20"><path d="m6 8 4 4 4-4"/></svg></button></div>
+        <div class="topbar-spacer"></div>
+        <div class="sync-chip"><i></i><span>En vivo</span></div>
+        <button class="topbar-icon" type="button" data-view-target="alerts" aria-label="Ver alertas"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><b>3</b></button>
+        <div class="topbar-date" id="topbar-date"></div>
+      </header>
+      <main class="ops-main" id="ops-main" tabindex="-1">
+        <div id="view-root" aria-live="polite"></div>
+      </main>
+    </div>
+  </div>
+  <div class="ops-toast" id="ops-toast" role="status" hidden></div>
+</body>
+</html>

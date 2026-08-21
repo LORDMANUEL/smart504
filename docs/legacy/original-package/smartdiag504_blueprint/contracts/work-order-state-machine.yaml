@@ -1,0 +1,56 @@
+version: 1
+entity: WorkOrder
+initial_state: DRAFT
+terminal_states:
+  - CLOSED
+  - CANCELLED
+states:
+  DRAFT:
+    allowed_next: [CHECKED_IN, CANCELLED]
+  CHECKED_IN:
+    allowed_next: [DIAGNOSING, CANCELLED]
+    guards:
+      - intake_signed
+      - vehicle_identified
+  DIAGNOSING:
+    allowed_next: [AWAITING_APPROVAL, CANCELLED]
+  AWAITING_APPROVAL:
+    allowed_next: [DIAGNOSING, APPROVED, CANCELLED]
+    guards:
+      - estimate_version_frozen
+  APPROVED:
+    allowed_next: [WAITING_PARTS, SCHEDULED, CANCELLED]
+    guards:
+      - approval_matches_current_estimate_version
+  WAITING_PARTS:
+    allowed_next: [SCHEDULED, CANCELLED]
+  SCHEDULED:
+    allowed_next: [IN_PROGRESS, CANCELLED]
+    guards:
+      - technician_assigned
+  IN_PROGRESS:
+    allowed_next: [AWAITING_APPROVAL, QUALITY_CONTROL]
+  QUALITY_CONTROL:
+    allowed_next: [IN_PROGRESS, READY_FOR_INVOICE]
+  READY_FOR_INVOICE:
+    allowed_next: [INVOICED]
+    guards:
+      - quality_check_passed
+      - no_unapproved_consumption
+  INVOICED:
+    allowed_next: [READY_FOR_DELIVERY]
+  READY_FOR_DELIVERY:
+    allowed_next: [DELIVERED]
+    guards:
+      - paid_or_credit_authorized
+      - delivery_documents_ready
+  DELIVERED:
+    allowed_next: [CLOSED]
+    guards:
+      - customer_or_authorized_person_signed
+  CLOSED:
+    allowed_next: []
+  CANCELLED:
+    allowed_next: []
+audit_required: true
+optimistic_concurrency: true

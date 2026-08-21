@@ -1,0 +1,248 @@
+name: smartdiag504-preview
+
+x-platform-environment: &platform-environment
+  APP_VERSION: 0.4.0
+  ENVIRONMENT: development
+  DATABASE_URL: postgresql+psycopg://smartdiag:smartdiag-preview@postgres:5432/smartdiag_platform
+  MEDIA_ROOT: /var/lib/smartdiag/media
+  MEDIA_BACKEND: filesystem
+  PUBLIC_MEDIA_BASE_URL: /media
+  S3_ENDPOINT_URL: http://garage.invalid:3900
+  S3_BUCKET: smartdiag-preview
+  S3_REGION: garage
+  S3_ACCESS_KEY_ID: preview-access
+  S3_SECRET_ACCESS_KEY: preview-secret
+  ADMIN_API_TOKEN: preview-admin-token-please-change
+  EVENT_HMAC_SECRET: preview-event-secret-please-change
+  CHAT_SESSION_SECRET: preview-chat-secret-please-change
+  AI_GATEWAY_INTERNAL_TOKEN: preview-ai-token-please-change
+  CORS_ORIGINS: http://localhost:18080,http://localhost:18081
+  PUBLIC_CHAT_ENABLED: "true"
+  AI_GATEWAY_URL: http://haproxy:8083
+  BUSINESS_NAME: SmartDiag504
+  BUSINESS_PHONE: +504 0000-0000
+  BUSINESS_WHATSAPP_URL: https://wa.me/50400000000
+  BUSINESS_ADDRESS: San Pedro Sula, Honduras
+  BUSINESS_HOURS: Horario sujeto a confirmación
+  INVOICE_VERIFICATION_MODE: development
+
+x-ai-environment: &ai-environment
+  ENVIRONMENT: development
+  AI_GATEWAY_INTERNAL_TOKEN: preview-ai-token-please-change
+  LLM_PROVIDER: demo
+  LLM_BASE_URL: http://ollama.invalid:11434/v1
+  LLM_MODEL: smartdiag-demo
+  CHROMA_URL: http://chromadb:8000
+  CHROMA_ENABLED: "false"
+  CHROMA_COLLECTION: smartdiag_knowledge
+  BUSINESS_NAME: SmartDiag504
+  BUSINESS_PHONE: +504 0000-0000
+  BUSINESS_WHATSAPP_URL: https://wa.me/50400000000
+  BUSINESS_ADDRESS: San Pedro Sula, Honduras
+  BUSINESS_HOURS: Horario sujeto a confirmación
+
+services:
+  haproxy:
+    image: haproxy:3.0-alpine
+    ports:
+      - "18080:8080"
+      - "18081:8081"
+      - "18082:8082"
+      - "18083:8083"
+      - "18404:8404"
+    volumes:
+      - ./infra/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      public-web-a: {condition: service_healthy}
+      public-web-b: {condition: service_healthy}
+      ops-web-a: {condition: service_healthy}
+      ops-web-b: {condition: service_healthy}
+      platform-api-a: {condition: service_healthy}
+      platform-api-b: {condition: service_healthy}
+      ai-gateway-a: {condition: service_healthy}
+      ai-gateway-b: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8404/stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  public-web-a:
+    build:
+      context: ./apps/public-web
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+        VITE_BUSINESS_EMAIL: ${BUSINESS_EMAIL:-info@smartdiag504.com}
+        VITE_BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+        VITE_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+    image: smartdiag504/public-web:0.4.0-preview
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  public-web-b:
+    build:
+      context: ./apps/public-web
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+        VITE_BUSINESS_EMAIL: ${BUSINESS_EMAIL:-info@smartdiag504.com}
+        VITE_BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+        VITE_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+    image: smartdiag504/public-web:0.4.0-preview
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ops-web-a:
+    build: {context: ./apps/ops-web, args: {VITE_API_BASE_URL: ""}}
+    image: smartdiag504/ops-web:0.4.0-preview
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ops-web-b:
+    build: {context: ./apps/ops-web, args: {VITE_API_BASE_URL: ""}}
+    image: smartdiag504/ops-web:0.4.0-preview
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  platform-migrate:
+    build: {context: ., dockerfile: services/platform-api/Dockerfile}
+    image: smartdiag504/platform-api:0.4.0-preview
+    environment: *platform-environment
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    volumes: [platform-media:/var/lib/smartdiag/media]
+
+  platform-seed:
+    image: smartdiag504/platform-api:0.4.0-preview
+    environment: *platform-environment
+    command: ["python", "scripts/seed.py"]
+    depends_on:
+      platform-migrate: {condition: service_completed_successfully}
+    volumes: [platform-media:/var/lib/smartdiag/media]
+
+  platform-api-a:
+    image: smartdiag504/platform-api:0.4.0-preview
+    environment:
+      <<: *platform-environment
+      NODE_ID: preview-api-a
+      NODE_ROLE: platform-api
+    depends_on:
+      platform-seed: {condition: service_completed_successfully}
+      ai-gateway-a: {condition: service_healthy}
+      ai-gateway-b: {condition: service_healthy}
+    volumes: [platform-media:/var/lib/smartdiag/media]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  platform-api-b:
+    image: smartdiag504/platform-api:0.4.0-preview
+    environment:
+      <<: *platform-environment
+      NODE_ID: preview-api-b
+      NODE_ROLE: platform-api
+    depends_on:
+      platform-seed: {condition: service_completed_successfully}
+      ai-gateway-a: {condition: service_healthy}
+      ai-gateway-b: {condition: service_healthy}
+    volumes: [platform-media:/var/lib/smartdiag/media]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-gateway-a:
+    build: {context: ., dockerfile: services/ai-gateway/Dockerfile}
+    image: smartdiag504/ai-gateway:0.4.0-preview
+    environment: *ai-environment
+    depends_on:
+      chromadb: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-gateway-b:
+    image: smartdiag504/ai-gateway:0.4.0-preview
+    environment: *ai-environment
+    depends_on:
+      chromadb: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  alerts-worker-a:
+    build: {context: ., dockerfile: services/alerts-worker/Dockerfile}
+    image: smartdiag504/alerts-worker:0.4.0-preview
+    environment:
+      API_URL: http://haproxy:8082
+      HEARTBEAT_TOKEN: preview-event-secret-please-change
+      ADMIN_API_TOKEN: preview-admin-token-please-change
+      NODE_ID: preview-alerts-a
+      LEASE_NAME: alerts-worker
+    depends_on:
+      haproxy: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: smartdiag_platform
+      POSTGRES_USER: smartdiag
+      POSTGRES_PASSWORD: smartdiag-preview
+    volumes: [preview-postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartdiag -d smartdiag_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  redis-platform:
+    image: valkey/valkey:8.1.9-alpine
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "preview-redis"]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a preview-redis ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:1.5.9
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes: [preview-chroma:/chroma/chroma]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v2/heartbeat', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  preview-postgres: {}
+  preview-chroma: {}
+  platform-media: {}

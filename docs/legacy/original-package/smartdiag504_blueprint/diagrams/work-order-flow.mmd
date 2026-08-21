@@ -1,0 +1,26 @@
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> CHECKED_IN: recepción completada
+    CHECKED_IN --> DIAGNOSING: autorizar diagnóstico
+    DIAGNOSING --> AWAITING_APPROVAL: enviar cotización
+    AWAITING_APPROVAL --> DIAGNOSING: solicitar revisión
+    AWAITING_APPROVAL --> APPROVED: aprobación válida
+    AWAITING_APPROVAL --> CANCELLED: cliente no continúa
+    APPROVED --> WAITING_PARTS: faltan repuestos
+    APPROVED --> SCHEDULED: recursos disponibles
+    WAITING_PARTS --> SCHEDULED: repuestos listos
+    SCHEDULED --> IN_PROGRESS: iniciar trabajo
+    IN_PROGRESS --> AWAITING_APPROVAL: trabajo adicional
+    IN_PROGRESS --> QUALITY_CONTROL: trabajo técnico terminado
+    QUALITY_CONTROL --> IN_PROGRESS: QC fallido / retrabajo
+    QUALITY_CONTROL --> READY_FOR_INVOICE: QC aprobado
+    READY_FOR_INVOICE --> INVOICED: factura contabilizada
+    INVOICED --> READY_FOR_DELIVERY: pago o crédito autorizado
+    READY_FOR_DELIVERY --> DELIVERED: entrega firmada
+    DELIVERED --> CLOSED: cierre administrativo
+    CLOSED --> [*]
+
+    DRAFT --> CANCELLED
+    CHECKED_IN --> CANCELLED
+    DIAGNOSING --> CANCELLED
+    APPROVED --> CANCELLED: excepción autorizada

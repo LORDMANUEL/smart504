@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "feat/**", "codex/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Python verification dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest==9.0.2 PyYAML==6.0.2 playwright==1.54.0 ruff==0.12.8
+          python -m pip install -e packages/smartdiag_domain
+          python -m pip install -r services/platform-api/requirements.txt
+          python -m pip install -r services/ai-gateway/requirements.txt
+          python -m pip install -r services/alerts-worker/requirements.txt
+
+      - name: Install frontend and browser dependencies
+        run: |
+          npm install --global typescript@5.8.3
+          npm --prefix apps/public-web install --no-audit --no-fund
+          npm --prefix apps/ops-web install --no-audit --no-fund
+          python -m playwright install --with-deps chromium
+
+      - name: Verify repository
+        run: bash scripts/verify.sh --require-frontend-deps
+
+      - name: Verify guided installer contract
+        run: pytest -q tests/test_installer_contract.py
+
+      - name: Capture UI previews
+        run: bash scripts/capture-previews.sh
+
+      - name: Upload UI previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartdiag504-previews-${{ github.sha }}
+          path: previews/*.png
+          if-no-files-found: error
+          retention-days: 14

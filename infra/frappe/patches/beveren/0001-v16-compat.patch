@@ -1,0 +1,159 @@
+diff --git a/beveren_fsm/field_service_management/doctype/service_order/service_order.js b/beveren_fsm/field_service_management/doctype/service_order/service_order.js
+index 639e99b..486e2f1 100644
+--- a/beveren_fsm/field_service_management/doctype/service_order/service_order.js
++++ b/beveren_fsm/field_service_management/doctype/service_order/service_order.js
+@@ -7,6 +7,7 @@ frappe.ui.form.on("Service Order", {
+   customer: function (frm) {
+     frm.set_query("customer_address", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.address.address.address_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.customer,
+@@ -15,6 +16,7 @@ frappe.ui.form.on("Service Order", {
+     });
+     frm.set_query("customer_contact", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.contact.contact.contact_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.customer,
+diff --git a/beveren_fsm/field_service_management/doctype/service_order/service_order.py b/beveren_fsm/field_service_management/doctype/service_order/service_order.py
+index e99def0..702ad10 100644
+--- a/beveren_fsm/field_service_management/doctype/service_order/service_order.py
++++ b/beveren_fsm/field_service_management/doctype/service_order/service_order.py
+@@ -3,7 +3,7 @@
+ 
+ import frappe
+ from frappe import _
+-from frappe.model.document import Document
++from erpnext.controllers.selling_controller import SellingController
+ from frappe.model.mapper import get_mapped_doc
+ from frappe.utils import flt, getdate, today
+ 
+@@ -26,7 +26,7 @@ def _set_status_from_location(order, location):
+ 	return False
+ 
+ 
+-class ServiceOrder(Document):
++class ServiceOrder(SellingController):
+ 	def validate(self):
+ 		self.ensure_default_product_location()
+ 		self.set_in_words()
+diff --git a/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.js b/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.js
+index ed36f4b..4e7b1eb 100644
+--- a/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.js
++++ b/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.js
+@@ -3,6 +3,7 @@ frappe.ui.form.on("Service Quotation", {
+     if (frm.doc.party !== "Customer") return;
+     frm.set_query("service_address", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.address.address.address_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.party_name,
+@@ -11,6 +12,7 @@ frappe.ui.form.on("Service Quotation", {
+     });
+     frm.set_query("customer_contact", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.contact.contact.contact_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.party_name,
+diff --git a/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.py b/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.py
+index e0f72c9..feb12ce 100644
+--- a/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.py
++++ b/beveren_fsm/field_service_management/doctype/service_quotation/service_quotation.py
+@@ -3,10 +3,10 @@
+ 
+ import frappe
+ from frappe import _
+-from frappe.model.document import Document
++from erpnext.controllers.selling_controller import SellingController
+ from frappe.model.mapper import get_mapped_doc
+ 
+ 
+-class ServiceQuotation(Document):
++class ServiceQuotation(SellingController):
+ 	def validate(self):
+ 		self.validate_items()
+diff --git a/beveren_fsm/field_service_management/doctype/service_request/service_request.js b/beveren_fsm/field_service_management/doctype/service_request/service_request.js
+index 615d852..516ebd3 100644
+--- a/beveren_fsm/field_service_management/doctype/service_request/service_request.js
++++ b/beveren_fsm/field_service_management/doctype/service_request/service_request.js
+@@ -3,6 +3,7 @@ frappe.ui.form.on("Service Request", {
+   customer: function (frm) {
+     frm.set_query("customer_address", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.address.address.address_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.customer,
+@@ -11,6 +12,7 @@ frappe.ui.form.on("Service Request", {
+     });
+     frm.set_query("customer_contact", function (doc) {
+       return {
++        query: "frappe.contacts.doctype.contact.contact.contact_query",
+         filters: {
+           link_doctype: "Customer",
+           link_name: doc.customer,
+diff --git a/beveren_fsm/hooks.py b/beveren_fsm/hooks.py
+index 70b5b69..96933c2 100644
+--- a/beveren_fsm/hooks.py
++++ b/beveren_fsm/hooks.py
+@@ -8,18 +8,19 @@ app_license = "agpl-3.0"
+ # Apps
+ # ------------------
+ 
+-# required_apps = []
++# This app extends ERPNext doctypes and must not be installed on bare Frappe.
++required_apps = ["erpnext"]
+ 
+-# Each item in the list will be shown as an app in the apps page
+-# add_to_apps_screen = [
+-# 	{
+-# 		"name": "beveren_fsm",
+-# 		"logo": "/assets/beveren_fsm/logo.png",
+-# 		"title": "Field Service Management",
+-# 		"route": "/beveren_fsm",
+-# 		"has_permission": "beveren_fsm.api.permission.has_app_permission"
+-# 	}
+-# ]
++# Register a working Desk application tile. The previous example referenced
++# a permission function and logo that do not exist in the upstream app.
++add_to_apps_screen = [
++	{
++		"name": "beveren_fsm",
++		"logo": "/assets/beveren_fsm/schedule/favicon-32x32.webp",
++		"title": "Field Service Management",
++		"route": "/desk/service",
++	}
++]
+ 
+ fixtures = [
+ 	# Export your custom "Service Type" doctype
+diff --git a/pyproject.toml b/pyproject.toml
+index 40e99dd..c736f10 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -8,13 +8,19 @@ requires-python = ">=3.10"
+ readme = "README.md"
+ dynamic = ["version"]
+ dependencies = [
+-    # "frappe~=15.0.0" # Installed and managed by bench.
++    # frappe and erpnext are installed and managed by bench; see
++    # [tool.bench.frappe-dependencies] below for version compatibility.
+ ]
+ 
+ [build-system]
+ requires = ["flit_core >=3.4,<4"]
+ build-backend = "flit_core.buildapi"
+ 
++# Used by bench to validate compatibility with the installed applications.
++[tool.bench.frappe-dependencies]
++frappe = ">=16.0.0,<17.0.0"
++erpnext = ">=16.0.0,<17.0.0"
++
+ # These dependencies are only installed when developer mode is enabled
+ [tool.bench.dev-dependencies]
+ # package_name = "~=1.1.0"

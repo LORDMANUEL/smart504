@@ -1,0 +1,22 @@
+services:
+  mariadb-galera:
+    build:
+      context: ../../../..
+      dockerfile: infra/ha/two-node/mariadb/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${GALERA_ROOT_PASSWORD}
+      NODE_NAME: ${NODE_NAME}
+      NODE_PRIVATE_IP: ${NODE_PRIVATE_IP}
+      GALERA_CLUSTER_NAME: ${GALERA_CLUSTER_NAME}
+      GALERA_NODE_A: ${GALERA_NODE_A}
+      GALERA_NODE_B: ${GALERA_NODE_B}
+      GALERA_SST_PASSWORD: ${GALERA_SST_PASSWORD}
+      GALERA_BOOTSTRAP: ${GALERA_BOOTSTRAP:-0}
+    volumes:
+      - galera-data:/var/lib/mysql
+      - ./galera.cnf.template:/templates/galera.cnf.template:ro
+
+volumes:
+  galera-data:

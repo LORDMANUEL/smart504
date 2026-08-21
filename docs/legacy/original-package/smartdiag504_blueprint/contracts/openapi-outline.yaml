@@ -1,0 +1,193 @@
+openapi: 3.1.0
+info:
+  title: SmartDiag504 Workshop OS API
+  version: 0.1.0
+  description: Contrato preliminar de la API operacional. No representa todavía una implementación productiva.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      security: []
+      operationId: health
+      responses:
+        '200':
+          description: Service healthy
+  /customers:
+    get:
+      operationId: listCustomers
+      responses:
+        '200': {description: Customer page}
+    post:
+      operationId: createCustomer
+      responses:
+        '201': {description: Customer created}
+  /vehicles:
+    get:
+      operationId: listVehicles
+      responses:
+        '200': {description: Vehicle page}
+    post:
+      operationId: createVehicle
+      responses:
+        '201': {description: Vehicle created}
+  /appointments:
+    get:
+      operationId: listAppointments
+      responses:
+        '200': {description: Appointment page}
+    post:
+      operationId: createAppointment
+      responses:
+        '201': {description: Appointment created}
+  /work-orders:
+    get:
+      operationId: listWorkOrders
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: branch_id
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: Work order page}
+    post:
+      operationId: createWorkOrder
+      responses:
+        '201': {description: Work order created}
+  /work-orders/{work_order_id}:
+    get:
+      operationId: getWorkOrder
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '200': {description: Work order aggregate}
+  /work-orders/{work_order_id}/transition:
+    post:
+      operationId: transitionWorkOrder
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionCommand'
+      responses:
+        '200': {description: Transition applied}
+        '409': {description: Invalid state or stale version}
+  /work-orders/{work_order_id}/diagnostic-findings:
+    post:
+      operationId: createDiagnosticFinding
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Finding created}
+  /work-orders/{work_order_id}/estimates:
+    post:
+      operationId: createEstimateVersion
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Estimate version created}
+  /estimates/{estimate_version_id}/send:
+    post:
+      operationId: sendEstimate
+      parameters:
+        - in: path
+          name: estimate_version_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '202': {description: Estimate frozen and queued for delivery}
+  /estimates/{estimate_version_id}/approvals:
+    post:
+      operationId: approveEstimateLines
+      parameters:
+        - in: path
+          name: estimate_version_id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '201': {description: Approval recorded}
+  /work-orders/{work_order_id}/technician-assignments:
+    post:
+      operationId: assignTechnician
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Technician assigned}
+  /work-orders/{work_order_id}/time-entries:
+    post:
+      operationId: createTimeEntry
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Time entry created}
+  /work-orders/{work_order_id}/part-requests:
+    post:
+      operationId: createPartRequest
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Part request created}
+  /work-orders/{work_order_id}/quality-inspections:
+    post:
+      operationId: createQualityInspection
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Quality inspection created}
+  /work-orders/{work_order_id}/delivery:
+    post:
+      operationId: deliverVehicle
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderId'
+      responses:
+        '201': {description: Delivery signed and recorded}
+  /alerts:
+    get:
+      operationId: listAlerts
+      responses:
+        '200': {description: Alert page}
+  /assistant/query:
+    post:
+      operationId: queryAssistant
+      responses:
+        '200': {description: Answer with sources and tool audit metadata}
+  /public/appointments:
+    post:
+      security: []
+      operationId: createPublicAppointment
+      responses:
+        '201': {description: Appointment request created}
+  /public/catalog/search:
+    get:
+      security: []
+      operationId: searchPublicCatalog
+      responses:
+        '200': {description: Catalog results with freshness metadata}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    WorkOrderId:
+      in: path
+      name: work_order_id
+      required: true
+      schema: {type: string, format: uuid}
+  schemas:
+    TransitionCommand:
+      type: object
+      required: [to_state, expected_version, reason]
+      properties:
+        to_state: {type: string}
+        expected_version: {type: integer, minimum: 0}
+        reason: {type: string, minLength: 1, maxLength: 500}
+        idempotency_key: {type: string, minLength: 8, maxLength: 200}

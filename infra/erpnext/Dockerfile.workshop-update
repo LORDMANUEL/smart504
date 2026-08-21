@@ -1,0 +1,15 @@
+ARG BASE_IMAGE=smartdiag504-erpnext-workshop:16
+FROM ${BASE_IMAGE}
+
+# Maintenance image for an already provisioned workshop stack. The full
+# Dockerfile remains the reproducible cold build; this layer avoids cloning
+# ERPNext, HRMS and Beveren again for every SmartDiag-only release.
+USER root
+COPY --chown=frappe:frappe frappe-apps/smartdiag_workshop /home/frappe/frappe-bench/apps/smartdiag_workshop
+RUN /home/frappe/frappe-bench/env/bin/pip install -e /home/frappe/frappe-bench/apps/smartdiag_workshop \
+    && chown -R frappe:frappe /home/frappe/frappe-bench/apps/smartdiag_workshop
+
+USER frappe
+RUN cd /home/frappe/frappe-bench && bench build --app smartdiag_workshop \
+    && ln -sfn /home/frappe/frappe-bench/apps/smartdiag_workshop/smartdiag_workshop/public \
+        /home/frappe/frappe-bench/assets/smartdiag_workshop

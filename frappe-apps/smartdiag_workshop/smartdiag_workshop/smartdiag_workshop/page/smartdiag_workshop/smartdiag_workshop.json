@@ -1,0 +1,26 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "SmartDiag Workshop",
+ "name": "smartdiag-workshop",
+ "page_name": "smartdiag-workshop",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Workshop Manager"},
+  {"role": "Service Advisor"},
+  {"role": "Workshop Technician"},
+  {"role": "Workshop Quality Inspector"},
+  {"role": "Parts Clerk"},
+  {"role": "Workshop Cashier"},
+  {"role": "Accounts User"},
+  {"role": "Stock User"},
+  {"role": "HR User"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "SmartDiag504"
+}

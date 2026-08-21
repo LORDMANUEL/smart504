@@ -1,0 +1,40 @@
+erDiagram
+    ORGANIZATION ||--o{ BRANCH : contains
+    BRANCH ||--o{ WORKSHOP : contains
+    WORKSHOP ||--o{ BAY : contains
+    ORGANIZATION ||--o{ USER : employs
+    USER ||--o| TECHNICIAN_PROFILE : may_have
+
+    CUSTOMER ||--o{ VEHICLE : owns
+    VEHICLE ||--o{ VEHICLE_ODOMETER : records
+    CUSTOMER ||--o{ APPOINTMENT : books
+    VEHICLE ||--o{ APPOINTMENT : scheduled_for
+    APPOINTMENT ||--o| INTAKE : becomes
+    INTAKE ||--|| WORK_ORDER : opens
+
+    WORK_ORDER ||--o{ WORK_ORDER_STATUS_HISTORY : tracks
+    WORK_ORDER ||--o{ DIAGNOSTIC_FINDING : contains
+    WORK_ORDER ||--o{ DTC_OBSERVATION : contains
+    WORK_ORDER ||--o{ ESTIMATE : contains
+    ESTIMATE ||--o{ ESTIMATE_VERSION : versions
+    ESTIMATE_VERSION ||--o{ ESTIMATE_LINE : lines
+    ESTIMATE_VERSION ||--o{ ESTIMATE_APPROVAL : approvals
+
+    WORK_ORDER ||--o{ JOB_OPERATION : decomposes
+    JOB_OPERATION ||--o{ TECHNICIAN_ASSIGNMENT : assigned
+    TECHNICIAN_ASSIGNMENT ||--o{ TIME_ENTRY : records
+
+    WORK_ORDER ||--o{ PART_REQUEST : requests
+    PART_REQUEST ||--o{ PART_REQUEST_LINE : lines
+    PART_REQUEST_LINE ||--o{ PART_ISSUE_REFERENCE : fulfilled_by
+
+    WORK_ORDER ||--o{ QUALITY_INSPECTION : verifies
+    WORK_ORDER ||--o{ ROAD_TEST : tests
+    WORK_ORDER ||--o| DELIVERY : delivered_as
+    WORK_ORDER ||--o{ WARRANTY_COVERAGE : covers
+    WARRANTY_COVERAGE ||--o{ WARRANTY_CLAIM : claims
+
+    WORK_ORDER ||--o{ ATTACHMENT : evidences
+    WORK_ORDER ||--o{ OUTBOX_EVENT : publishes
+    WORK_ORDER ||--o{ ALERT_INSTANCE : raises
+    WORK_ORDER ||--o{ AUDIT_LOG : audits

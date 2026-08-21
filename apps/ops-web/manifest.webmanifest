@@ -1,0 +1,18 @@
+{
+  "name": "SmartDiag504 Workshop OS",
+  "short_name": "SmartDiag504",
+  "description": "Operación de taller, técnicos, bahías, repuestos y alertas.",
+  "lang": "es-HN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fa",
+  "theme_color": "#071827",
+  "icons": [
+    {
+      "src": "/packages/design-system/assets/smartdiag504-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

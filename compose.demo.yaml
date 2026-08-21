@@ -1,0 +1,159 @@
+name: smartdiag504-demo
+
+x-api-env: &api-env
+  PYTHONPATH: /srv/platform-api
+  ENVIRONMENT: staging
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+  EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
+  CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
+  CLIENT_DEMO_EMAIL: ${CLIENT_DEMO_EMAIL}
+  CLIENT_DEMO_PASSWORD: ${CLIENT_DEMO_PASSWORD}
+  AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+  PUBLIC_CHAT_ENABLED: "false"
+  FRAPPE_REQUIRED: "false"
+  INVOICE_VERIFICATION_MODE: development
+  CORS_ORIGINS: https://taller.nexusmedi.org
+  MEDIA_ROOT: /var/lib/smartdiag/media
+  PUBLIC_MEDIA_BASE_URL: /media
+  BUSINESS_NAME: SmartDiag504
+  BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 9990-5040}
+  BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+
+services:
+  gateway:
+    image: haproxy:3.0-alpine
+    restart: unless-stopped
+    expose: ["8084"]
+    volumes: ["./infra/haproxy/haproxy.demo.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"]
+    networks: [default, coolify]
+    depends_on:
+      public-web: {condition: service_healthy}
+      ops-web: {condition: service_healthy}
+      platform-api: {condition: service_healthy}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8084/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: coolify
+      traefik.http.middlewares.smartdiag504-gzip.compress: "true"
+      traefik.http.middlewares.smartdiag504-https.redirectscheme.scheme: https
+      traefik.http.middlewares.smartdiag504-https.redirectscheme.permanent: "true"
+      traefik.http.routers.smartdiag504-http.entrypoints: http
+      traefik.http.routers.smartdiag504-http.rule: Host(`taller.nexusmedi.org`)
+      traefik.http.routers.smartdiag504-http.middlewares: smartdiag504-https
+      traefik.http.routers.smartdiag504-http.service: smartdiag504-demo
+      traefik.http.routers.smartdiag504-https.entrypoints: https
+      traefik.http.routers.smartdiag504-https.rule: Host(`taller.nexusmedi.org`)
+      traefik.http.routers.smartdiag504-https.middlewares: smartdiag504-gzip
+      traefik.http.routers.smartdiag504-https.tls: "true"
+      traefik.http.routers.smartdiag504-https.tls.certresolver: letsencrypt
+      traefik.http.routers.smartdiag504-https.service: smartdiag504-demo
+      traefik.http.services.smartdiag504-demo.loadbalancer.server.port: "8084"
+
+  public-web:
+    build:
+      context: ./apps/public-web
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  ops-web:
+    build:
+      context: ./apps/ops-web
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  migrate:
+    build:
+      context: .
+      dockerfile: services/platform-api/Dockerfile
+    restart: "no"
+    environment: *api-env
+    command: ["alembic", "upgrade", "head"]
+    volumes: ["platform-media:/var/lib/smartdiag/media"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  seed:
+    build:
+      context: .
+      dockerfile: services/platform-api/Dockerfile
+    restart: "no"
+    environment: *api-env
+    command: ["python", "scripts/seed.py"]
+    volumes: ["platform-media:/var/lib/smartdiag/media"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  platform-api:
+    build:
+      context: .
+      dockerfile: services/platform-api/Dockerfile
+    restart: unless-stopped
+    environment: *api-env
+    expose: ["8000"]
+    volumes: ["platform-media:/var/lib/smartdiag/media"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      seed: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8.1.9-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a '${REDIS_PASSWORD}' ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+networks:
+  coolify:
+    external: true
+
+volumes:
+  postgres-data:
+  redis-data:
+  platform-media:

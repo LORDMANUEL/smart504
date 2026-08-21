@@ -1,0 +1,4 @@
+FROM haproxy:3.0-alpine
+COPY infra/haproxy/haproxy.demo.cfg /usr/local/etc/haproxy/haproxy.cfg
+EXPOSE 8084
+

@@ -1,0 +1,60 @@
+version: 1
+common_envelope:
+  required:
+    - event_id
+    - event_type
+    - event_version
+    - occurred_at
+    - tenant_id
+    - branch_id
+    - actor_id
+    - correlation_id
+    - aggregate_type
+    - aggregate_id
+  idempotency_key: event_id
+events:
+  WORK_ORDER_CREATED:
+    version: 1
+    payload_required: [work_order_number, customer_id, vehicle_id]
+  VEHICLE_CHECKED_IN:
+    version: 1
+    payload_required: [work_order_id, intake_id, odometer]
+  DIAGNOSIS_RECORDED:
+    version: 1
+    payload_required: [work_order_id, finding_id, severity]
+  ESTIMATE_SENT:
+    version: 1
+    payload_required: [work_order_id, estimate_version_id, total_minor, currency]
+  ESTIMATE_APPROVED:
+    version: 1
+    payload_required: [work_order_id, estimate_version_id, approval_id]
+  PART_REQUEST_CREATED:
+    version: 1
+    payload_required: [work_order_id, part_request_id]
+  PART_ISSUED:
+    version: 1
+    payload_required: [work_order_id, part_request_line_id, erp_stock_reference]
+  TECHNICIAN_ASSIGNED:
+    version: 1
+    payload_required: [work_order_id, operation_id, technician_id]
+  WORK_STARTED:
+    version: 1
+    payload_required: [work_order_id, operation_id, technician_id, time_entry_id]
+  QUALITY_CHECK_FAILED:
+    version: 1
+    payload_required: [work_order_id, quality_inspection_id, failed_items]
+  QUALITY_CHECK_PASSED:
+    version: 1
+    payload_required: [work_order_id, quality_inspection_id]
+  INVOICE_POSTED:
+    version: 1
+    payload_required: [work_order_id, erp_invoice_id, total_minor, currency]
+  PAYMENT_RECEIVED:
+    version: 1
+    payload_required: [work_order_id, erp_payment_id, amount_minor, currency]
+  VEHICLE_DELIVERED:
+    version: 1
+    payload_required: [work_order_id, delivery_id, signed_by]
+  INTEGRATION_RECONCILIATION_FAILED:
+    version: 1
+    payload_required: [integration_name, reconciliation_run_id, difference_count]

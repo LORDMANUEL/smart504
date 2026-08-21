@@ -1,0 +1,20 @@
+[project]
+name = "smartdiag504-platform-tools"
+version = "0.1.0"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "packages/smartdiag_domain",
+  "services/platform-api",
+  "services/ai-gateway",
+  "services/alerts-worker",
+  "frappe-apps/smartdiag_workshop",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

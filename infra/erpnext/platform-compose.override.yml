@@ -1,0 +1,13 @@
+services:
+  platform-api:
+    env_file:
+      - /opt/smartdiag504-demo/secrets/frappe.env
+    environment:
+      FRAPPE_BASE_URL: https://erp.nexusmedi.org
+      FRAPPE_API_KEY: ${FRAPPE_API_KEY}
+      FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
+      FRAPPE_REQUIRED: "true"
+      INVOICE_VERIFICATION_MODE: strict
+      FRAPPE_COMPANY: SmartDiag504 Demo
+      FRAPPE_CUSTOMER: Consumidor Final SmartDiag504
+      FRAPPE_WAREHOUSE_SUFFIX: SD504

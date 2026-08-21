@@ -1,0 +1,13 @@
+[mariadb]
+bind-address=0.0.0.0
+binlog_format=ROW
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2
+wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_cluster_name=${GALERA_CLUSTER_NAME}
+wsrep_cluster_address=gcomm://${GALERA_NODE_A},${GALERA_NODE_B}
+wsrep_node_name=${NODE_NAME}
+wsrep_node_address=${NODE_PRIVATE_IP}
+wsrep_sst_method=mariabackup
+wsrep_sst_auth=sstuser:${GALERA_SST_PASSWORD}

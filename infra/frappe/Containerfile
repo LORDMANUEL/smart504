@@ -1,0 +1,61 @@
+ARG FRAPPE_IMAGE_TAG=version-16
+FROM frappe/build:${FRAPPE_IMAGE_TAG} AS builder
+
+ARG FRAPPE_BRANCH=v16.31.0
+ARG FRAPPE_PATH=https://github.com/frappe/frappe
+ARG BEVEREN_REF=ab6d56d1069882326475f256d09cc63236eddec1
+USER frappe
+
+RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1000 \
+    bench init \
+      --apps_path=/opt/frappe/apps.json \
+      --frappe-branch=${FRAPPE_BRANCH} \
+      --frappe-path=${FRAPPE_PATH} \
+      --no-procfile \
+      --no-backups \
+      --skip-redis-config-generation \
+      /home/frappe/frappe-bench
+
+RUN set -eux; \
+    git clone https://github.com/Beveren-Software-Inc/Field_Service_Management.git \
+      /home/frappe/frappe-bench/apps/beveren_fsm; \
+    cd /home/frappe/frappe-bench/apps/beveren_fsm; \
+    git checkout --detach ${BEVEREN_REF}
+
+COPY --chown=frappe:frappe infra/frappe/patches/beveren/0001-v16-compat.patch /tmp/0001-v16-compat.patch
+RUN set -eux; \
+    cd /home/frappe/frappe-bench/apps/beveren_fsm; \
+    git apply /tmp/0001-v16-compat.patch
+
+COPY --chown=frappe:frappe packages/smartdiag_domain /tmp/smartdiag_domain
+COPY --chown=frappe:frappe frappe-apps/smartdiag_workshop /tmp/smartdiag_workshop
+
+RUN set -eux; \
+    cp -a /tmp/smartdiag_workshop /home/frappe/frappe-bench/apps/smartdiag_workshop; \
+    cd /home/frappe/frappe-bench; \
+    ./env/bin/pip install /tmp/smartdiag_domain; \
+    ./env/bin/pip install -e apps/beveren_fsm -e apps/smartdiag_workshop; \
+    if [ -f apps/beveren_fsm/package.json ]; then \
+      cd apps/beveren_fsm; \
+      yarn install --frozen-lockfile || yarn install; \
+    fi; \
+    cd /home/frappe/frappe-bench; \
+    bench build --app beveren_fsm --app smartdiag_workshop; \
+    echo '{}' > sites/common_site_config.json; \
+    find apps -mindepth 1 -path '*/.git' -prune -exec rm -rf {} +
+
+ARG FRAPPE_IMAGE_TAG=version-16
+FROM frappe/base:${FRAPPE_IMAGE_TAG} AS runtime
+USER frappe
+COPY --from=builder --chown=frappe:frappe /home/frappe/frappe-bench /home/frappe/frappe-bench
+WORKDIR /home/frappe/frappe-bench
+RUN cp -r sites/assets /home/frappe/frappe-bench/assets && rm -rf sites/assets
+VOLUME ["/home/frappe/frappe-bench/sites", "/home/frappe/frappe-bench/logs"]
+USER root
+COPY infra/frappe/main-entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY infra/frappe/start.sh /usr/local/bin/start.sh
+COPY infra/frappe/bootstrap-site.sh /usr/local/bin/bootstrap-site.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh /usr/local/bin/start.sh /usr/local/bin/bootstrap-site.sh
+USER frappe
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["start.sh"]

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es-HN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SmartDiag504: diagnóstico automotriz, reparación, mantenimiento y repuestos con trazabilidad.">
+  <meta name="theme-color" content="#071827">
+  <title>SmartDiag504 | Diagnóstico, taller y repuestos</title>
+  <link rel="stylesheet" href="../../packages/design-system/tokens.css">
+  <link rel="stylesheet" href="../../packages/design-system/components.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="sd-skip-link" href="#main-content">Saltar al contenido</a>
+
+  <header class="site-header" id="site-header">
+    <div class="sd-shell header-inner">
+      <a class="brand" href="#inicio" aria-label="SmartDiag504, inicio">
+        <img src="../../packages/design-system/assets/smartdiag504-mark.svg" width="44" height="44" alt="">
+        <span class="brand-copy"><strong>SmartDiag</strong><b>504</b></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Navegación principal">
+        <button class="sd-nav-link" type="button" data-nav-target="servicios">Servicios</button>
+        <button class="sd-nav-link" type="button" data-nav-target="repuestos">Repuestos</button>
+        <button class="sd-nav-link" type="button" data-nav-target="reservar">Reservar</button>
+        <button class="sd-nav-link" type="button" data-nav-target="seguimiento">Seguimiento</button>
+      </nav>
+      <div class="header-actions">
+        <button class="cart-button" id="open-cart" type="button" aria-controls="cart-drawer" aria-label="Abrir carrito">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 7H7M10 20h.01M17 20h.01"/></svg>
+          <span>Carrito</span><b id="cart-count">0</b>
+        </button>
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Navegación móvil" hidden>
+      <button type="button" data-nav-target="servicios">Servicios</button>
+      <button type="button" data-nav-target="repuestos">Repuestos</button>
+      <button type="button" data-nav-target="reservar">Reservar cita</button>
+      <button type="button" data-nav-target="seguimiento">Seguimiento</button>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="inicio">
+      <div class="sd-shell hero-grid">
+        <div class="hero-copy">
+          <h1>Tu vehículo no necesita suposiciones.</h1>
+          <p>Diagnóstico con evidencia, cotización antes de trabajar e historial completo por vehículo. Taller, repuestos y seguimiento en un mismo lugar.</p>
+          <div class="hero-actions">
+            <button class="sd-button sd-button--amber" type="button" data-nav-target="reservar">Reservar diagnóstico</button>
+            <button class="sd-button hero-secondary" type="button" data-nav-target="repuestos">Buscar repuestos</button>
+          </div>
+          <ul class="hero-promises" aria-label="Compromisos de servicio">
+            <li><span>01</span> Evidencia digital</li>
+            <li><span>02</span> Aprobación por línea</li>
+            <li><span>03</span> Historial por VIN</li>
+          </ul>
+        </div>
+
+        <div class="diagnostic-stage" aria-label="Vista conceptual de diagnóstico SmartDiag504">
+          <div class="scan-orbit orbit-one"></div>
+          <div class="scan-orbit orbit-two"></div>
+          <div class="diagnostic-console">
+            <div class="console-head">
+              <div class="console-brand"><span></span> SmartDiag Live</div>
+              <div class="console-status"><i></i> Lectura activa</div>
+            </div>
+            <div class="vehicle-line-art" aria-hidden="true">
+              <svg viewBox="0 0 560 215" fill="none">
+                <path d="M74 139c13-33 29-55 55-67 39-18 113-25 191-21 62 3 109 18 145 49l38 10c19 5 31 20 31 39v12H31v-8c0-8 6-14 14-14h29Z"/>
+                <path d="M148 72l45 67M338 55l-22 84M192 70c42-12 94-17 146-15 38 2 72 10 103 27l-113 2-136-14Z"/>
+                <circle cx="133" cy="157" r="37"/><circle cx="435" cy="157" r="37"/>
+                <circle cx="133" cy="157" r="16"/><circle cx="435" cy="157" r="16"/>
+                <path d="M218 112h82M260 96v32"/>
+              </svg>
+              <div class="scan-beam"></div>
+            </div>
+            <div class="signal-grid">
+              <div><small>VIN</small><strong>•••• 7H42</strong></div>
+              <div><small>Módulos</small><strong>18 / 18</strong></div>
+              <div><small>Hallazgos</small><strong class="amber-text">03</strong></div>
+            </div>
+            <div class="wave-panel">
+              <svg viewBox="0 0 560 96" preserveAspectRatio="none" aria-hidden="true">
+                <path class="wave-grid" d="M0 24h560M0 48h560M0 72h560M70 0v96M140 0v96M210 0v96M280 0v96M350 0v96M420 0v96M490 0v96"/>
+                <path class="wave-line" d="M0 64 28 62 47 67 65 61 85 65 103 58 124 63 143 61 164 18 181 78 199 55 220 62 242 59 264 64 286 62 308 60 329 63 350 58 371 64 392 61 415 62 438 59 461 64 485 61 510 63 536 60 560 62"/>
+              </svg>
+            </div>
+          </div>
+          <div class="floating-finding finding-one"><span>Motor</span><strong>P0302</strong><small>Requiere prueba</small></div>
+          <div class="floating-finding finding-two"><span>Batería</span><strong>12.6 V</strong><small>Dentro de rango</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof-strip" aria-label="Forma de trabajo">
+      <div class="sd-shell proof-grid">
+        <p><strong>Diagnóstico documentado</strong><span>Hallazgos, fotos y pruebas asociados a la orden.</span></p>
+        <p><strong>Control del cliente</strong><span>Aprueba, rechaza o consulta cada trabajo adicional.</span></p>
+        <p><strong>Repuesto trazable</strong><span>Número de parte, existencia, entrega y garantía.</span></p>
+      </div>
+    </section>
+
+    <section class="services-section" id="servicios">
+      <div class="sd-shell">
+        <div class="section-heading split-heading">
+          <div><p class="section-index">Servicios</p><h2>Resolver la causa, no esconder el síntoma.</h2></div>
+          <p>Empezamos por escuchar el vehículo, medir y documentar. Cada servicio se conecta con la orden de trabajo y su historial.</p>
+        </div>
+        <div class="service-rail">
+          <article class="service-feature service-feature--primary">
+            <div class="service-number">01</div>
+            <div>
+              <h3>Diagnóstico y programación</h3>
+              <p>Lectura de módulos, pruebas eléctricas, DTC, datos en vivo, programación y evidencia técnica.</p>
+            </div>
+            <svg viewBox="0 0 72 72" aria-hidden="true"><path d="M14 22h44v29H14zM22 14v8M36 14v8M50 14v8M22 51v8M36 51v8M50 51v8M7 29h7M7 43h7M58 29h7M58 43h7M26 32h20v9H26z"/></svg>
+          </article>
+          <article class="service-feature"><div class="service-number">02</div><div><h3>Transmisión</h3><p>Diagnóstico, servicio y reparación con control de síntomas, temperatura y desempeño.</p></div></article>
+          <article class="service-feature"><div class="service-number">03</div><div><h3>Aire acondicionado</h3><p>Presión, fugas, desempeño, control electrónico y reparación del sistema.</p></div></article>
+          <article class="service-feature"><div class="service-number">04</div><div><h3>Mantenimiento</h3><p>Planes por kilometraje, inspección preventiva y próximos servicios visibles.</p></div></article>
+          <article class="service-feature"><div class="service-number">05</div><div><h3>Frenos y suspensión</h3><p>Inspección, medición, repuestos y prueba de calidad antes de entregar.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-section">
+      <div class="sd-shell workflow-grid">
+        <div class="workflow-copy">
+          <p class="section-index">Proceso transparente</p>
+          <h2>Sabes qué llegó, qué encontramos y qué quedó resuelto.</h2>
+          <p>La orden conserva fotografías de recepción, diagnóstico, cotizaciones, autorizaciones, repuestos, técnicos, control de calidad y entrega.</p>
+          <button class="sd-button sd-button--secondary" type="button" data-nav-target="seguimiento">Ver seguimiento</button>
+        </div>
+        <ol class="workflow-list">
+          <li><span>1</span><div><strong>Recepción</strong><small>Vehículo, síntomas, kilometraje y evidencia.</small></div></li>
+          <li><span>2</span><div><strong>Diagnóstico</strong><small>Pruebas, hallazgos y causa por confirmar o confirmada.</small></div></li>
+          <li><span>3</span><div><strong>Aprobación</strong><small>Mano de obra y repuestos visibles antes de ejecutar.</small></div></li>
+          <li><span>4</span><div><strong>Trabajo y calidad</strong><small>Técnicos, tiempos, consumo y verificación final.</small></div></li>
+          <li><span>5</span><div><strong>Entrega e historial</strong><small>Factura, recomendaciones y próximo mantenimiento.</small></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="parts-section" id="repuestos">
+      <div class="sd-shell">
+        <div class="section-heading parts-heading">
+          <div><p class="section-index">Repuestos</p><h2>Encuentra la pieza. Confirma antes de instalar.</h2></div>
+          <p>Catálogo conectado al inventario. La compatibilidad nunca se presenta como segura cuando todavía requiere VIN o validación técnica.</p>
+        </div>
+        <div class="catalog-toolbar">
+          <label class="catalog-search" for="parts-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+            <span class="sd-visually-hidden">Buscar repuestos</span>
+            <input id="parts-search" type="search" placeholder="Número de parte, nombre o vehículo" autocomplete="off">
+          </label>
+          <div class="category-filter" id="category-filter" role="group" aria-label="Categorías de repuestos"></div>
+        </div>
+        <div class="catalog-summary"><span id="catalog-count">0 productos</span><small>Precios de demostración en lempiras. El ERP será la fuente oficial.</small></div>
+        <div class="product-grid" id="product-grid" aria-live="polite"></div>
+        <div class="catalog-empty" id="catalog-empty" hidden>
+          <strong>No encontramos coincidencias.</strong>
+          <p>Prueba otro número de parte o solicita validación por VIN.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="booking-section" id="reservar">
+      <div class="sd-shell booking-grid">
+        <div class="booking-copy">
+          <p class="section-index section-index--light">Reserva</p>
+          <h2>Cuéntanos qué está pasando.</h2>
+          <p>Registramos el motivo de visita y te contactamos para confirmar fecha, alcance inicial y condiciones de diagnóstico.</p>
+          <div class="booking-note"><strong>No autoriza reparaciones.</strong><span>La solicitud de cita solo inicia el proceso de recepción.</span></div>
+        </div>
+        <form class="booking-form" id="booking-form">
+          <div class="form-row">
+            <div class="sd-field"><label for="booking-name">Nombre completo</label><input class="sd-input" id="booking-name" name="customer_name" required minlength="2" autocomplete="name"></div>
+            <div class="sd-field"><label for="booking-phone">Teléfono</label><input class="sd-input" id="booking-phone" name="phone" required minlength="8" autocomplete="tel"></div>
+          </div>
+          <div class="form-row">
+            <div class="sd-field"><label for="booking-email">Correo electrónico</label><input class="sd-input" id="booking-email" name="email" type="email" autocomplete="email" placeholder="Opcional"></div>
+            <div class="sd-field"><label for="booking-date">Fecha solicitada</label><input class="sd-input" id="booking-date" name="requested_date" type="date" required></div>
+          </div>
+          <div class="form-row form-row--vehicle">
+            <div class="sd-field"><label for="booking-make">Marca</label><input class="sd-input" id="booking-make" name="vehicle_make" required placeholder="Ford"></div>
+            <div class="sd-field"><label for="booking-model">Modelo</label><input class="sd-input" id="booking-model" name="vehicle_model" required placeholder="Escape"></div>
+            <div class="sd-field"><label for="booking-year">Año</label><input class="sd-input" id="booking-year" name="vehicle_year" type="number" min="1900" max="2100" required placeholder="2018"></div>
+          </div>
+          <div class="sd-field"><label for="booking-vin">VIN</label><input class="sd-input" id="booking-vin" name="vin" maxlength="17" placeholder="Opcional; ayuda a validar repuestos y versión"></div>
+          <div class="sd-field"><label for="booking-service">Tipo de atención</label><select class="sd-select" id="booking-service" name="service_code" required><option value="DIAGNOSTICO">Diagnóstico</option><option value="MANTENIMIENTO">Mantenimiento</option><option value="TRANSMISION">Transmisión</option><option value="AIRE_ACONDICIONADO">Aire acondicionado</option><option value="FRENOS_SUSPENSION">Frenos y suspensión</option><option value="REPUESTO">Consulta de repuesto</option></select></div>
+          <div class="sd-field"><label for="booking-reason">Síntoma o motivo</label><textarea class="sd-textarea" id="booking-reason" name="notes" rows="4" required placeholder="Describe cuándo ocurre, luces del tablero, ruidos o cambios recientes"></textarea></div>
+          <label class="consent"><input type="checkbox" required><span>Acepto ser contactado para confirmar esta solicitud.</span></label>
+          <button class="sd-button sd-button--amber booking-submit" type="submit">Enviar solicitud</button>
+          <div class="booking-success" id="booking-success" role="status" hidden>
+            <strong>Solicitud recibida.</strong>
+            <span id="booking-reference">Referencia pendiente</span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="tracking-section" id="seguimiento">
+      <div class="sd-shell tracking-grid">
+        <div>
+          <p class="section-index">Portal del cliente</p>
+          <h2>La orden sigue visible después de dejar el vehículo.</h2>
+          <p>Consulta estado, evidencia, cotizaciones, trabajos aprobados, factura, recomendaciones e historial.</p>
+        </div>
+        <form class="tracking-card" id="tracking-form">
+          <label for="tracking-code">Orden, placa o código de seguimiento</label>
+          <div><input class="sd-input" id="tracking-code" placeholder="Ej. OT-2026-0184"><button class="sd-button sd-button--dark" type="submit">Consultar</button></div>
+          <p id="tracking-result" role="status">El acceso real requerirá autenticación o un enlace seguro enviado al cliente.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="contact-section">
+      <div class="sd-shell contact-grid">
+        <div><p class="section-index section-index--light">SmartDiag504</p><h2>San Pedro Sula, Honduras.</h2></div>
+        <div class="contact-actions"><a class="sd-button sd-button--amber" href="tel:+50400000000">Llamar al taller</a><a class="sd-button contact-secondary" href="mailto:servicio@smartdiag504.com">Enviar correo</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="sd-shell footer-grid">
+      <div class="brand footer-brand"><img src="../../packages/design-system/assets/smartdiag504-mark.svg" width="42" height="42" alt=""><span class="brand-copy"><strong>SmartDiag</strong><b>504</b></span></div>
+      <p>Diagnóstico preciso. Servicio transparente.</p>
+      <p>© <span id="current-year"></span> SmartDiag504. Información comercial sujeta a confirmación.</p>
+    </div>
+  </footer>
+
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-hidden="true" aria-labelledby="cart-title">
+    <div class="cart-head"><div><small>Compra de repuestos</small><h2 id="cart-title">Tu carrito</h2></div><button class="sd-icon-button" id="close-cart" type="button" aria-label="Cerrar carrito">×</button></div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="cart-empty" id="cart-empty"><strong>El carrito está vacío.</strong><span>Añade una pieza para preparar tu solicitud.</span></div>
+    <div class="cart-footer"><div><span>Subtotal</span><strong id="cart-subtotal">L 0.00</strong></div><small>Existencia, impuesto, entrega y compatibilidad se confirman antes del pago.</small><button class="sd-button sd-button--dark" id="checkout-button" type="button" disabled>Continuar</button></div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

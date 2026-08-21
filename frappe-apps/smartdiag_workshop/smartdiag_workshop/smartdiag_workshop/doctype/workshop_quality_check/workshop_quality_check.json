@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "service_order",
+  "vehicle",
+  "inspector",
+  "inspection_at",
+  "result",
+  "checklist",
+  "road_test_required",
+  "road_test_result",
+  "notes",
+  "customer_ready"
+ ],
+ "fields": [
+  {
+   "fieldname": "service_order",
+   "fieldtype": "Link",
+   "label": "Service Order",
+   "options": "Service Order",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "Vehicle",
+   "options": "SmartDiag Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "inspector",
+   "fieldtype": "Link",
+   "label": "Inspector",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "inspection_at",
+   "fieldtype": "Datetime",
+   "label": "Inspection At",
+   "reqd": 1
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "label": "Result",
+   "options": "PENDING\nPASSED\nFAILED",
+   "default": "PENDING",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "checklist",
+   "fieldtype": "Table",
+   "label": "Checklist",
+   "options": "Quality Check Item"
+  },
+  {
+   "fieldname": "road_test_required",
+   "fieldtype": "Check",
+   "label": "Road Test Required",
+   "default": 0
+  },
+  {
+   "fieldname": "road_test_result",
+   "fieldtype": "Select",
+   "label": "Road Test Result",
+   "options": "NOT_REQUIRED\nPENDING\nPASSED\nFAILED",
+   "default": "NOT_REQUIRED"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Long Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "customer_ready",
+   "fieldtype": "Check",
+   "label": "Customer Ready",
+   "default": 0,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SmartDiag Workshop",
+ "name": "Workshop Quality Check",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "format:SD-QC-{YYYY}-{#####}",
+ "naming_rule": "Expression",
+ "is_submittable": 1,
+ "title_field": "service_order"
+}

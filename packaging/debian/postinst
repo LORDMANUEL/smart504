@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+install -d -m 0750 /etc/smartdiag504 /var/lib/smartdiag504 /var/log/smartdiag504
+if [ ! -f /etc/smartdiag504/platform.env ]; then
+  install -m 0640 /usr/share/smartdiag504/platform.env.example /etc/smartdiag504/platform.env
+fi
+printf '%s\n' 'SmartDiag504 instalado sin iniciar servicios.'
+printf '%s\n' 'Edite /etc/smartdiag504/platform.env y ejecute: sudo smartdiag504 validate'
+printf '%s\n' 'Para desplegar de forma explícita: sudo smartdiag504 deploy'

@@ -1,0 +1,192 @@
+services:
+  migrate:
+    env_file:
+      - /opt/smartdiag504-demo/secrets/frappe.env
+    environment:
+      FRAPPE_REQUIRED: "true"
+      INVOICE_VERIFICATION_MODE: strict
+      PRIVATE_EVIDENCE_ROOT: /var/lib/smartdiag/private/evidence
+    volumes:
+      - eeylxzuvyicq5i5lelcrcda9_platform-media:/var/lib/smartdiag/media
+      - platform-private:/var/lib/smartdiag/private
+
+  seed:
+    env_file:
+      - /opt/smartdiag504-demo/secrets/frappe.env
+    environment:
+      # Este override pertenece exclusivamente al VPS de demostración.
+      SEED_DEMO_DATA: "true"
+      FRAPPE_REQUIRED: "true"
+      INVOICE_VERIFICATION_MODE: strict
+      PRIVATE_EVIDENCE_ROOT: /var/lib/smartdiag/private/evidence
+    volumes:
+      - eeylxzuvyicq5i5lelcrcda9_platform-media:/var/lib/smartdiag/media
+      - platform-private:/var/lib/smartdiag/private
+
+  platform-api:
+    env_file:
+      - /opt/smartdiag504-demo/secrets/frappe.env
+      - /opt/smartdiag504-demo/secrets/s3.env
+      - /opt/smartdiag504-demo/secrets/smtp.env
+    environment:
+      FRAPPE_REQUIRED: "true"
+      INVOICE_VERIFICATION_MODE: strict
+      # Nunca incrustar el código de caja en Git. Coolify lo inyecta como secreto.
+      CASHIER_ACCESS_CODE: ${CASHIER_ACCESS_CODE:?Configure CASHIER_ACCESS_CODE in Coolify secrets}
+      PRIVATE_EVIDENCE_ROOT: /var/lib/smartdiag/private/evidence
+      PRIVATE_EVIDENCE_BACKEND: s3
+      S3_ENDPOINT_URL: http://garage:3900
+      MALWARE_SCANNER_HOST: clamav
+      MALWARE_SCANNER_PORT: "3310"
+      MALWARE_SCANNER_REQUIRED: "true"
+    volumes:
+      - eeylxzuvyicq5i5lelcrcda9_platform-media:/var/lib/smartdiag/media
+      - platform-private:/var/lib/smartdiag/private
+    depends_on:
+      garage: {condition: service_healthy}
+      clamav: {condition: service_healthy}
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    networks:
+      - eeylxzuvyicq5i5lelcrcda9
+    volumes:
+      - clamav-db:/var/lib/clamav
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+
+  garage-configurator:
+    image: alpine:3.22
+    restart: "no"
+    env_file:
+      - /opt/smartdiag504-demo/secrets/s3.env
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        umask 077
+        mkdir -p /config
+        cat > /config/garage.toml <<EOF
+        metadata_dir = "/var/lib/garage/meta"
+        data_dir = "/var/lib/garage/data"
+        db_engine = "sqlite"
+        replication_factor = 1
+        rpc_bind_addr = "[::]:3901"
+        rpc_public_addr = "garage:3901"
+        rpc_secret = "$${GARAGE_RPC_SECRET}"
+        [s3_api]
+        s3_region = "garage"
+        api_bind_addr = "[::]:3900"
+        root_domain = ".s3.garage.local"
+        [admin]
+        api_bind_addr = "[::]:3903"
+        admin_token = "$${GARAGE_ADMIN_TOKEN}"
+        metrics_token = "$${GARAGE_METRICS_TOKEN}"
+        EOF
+        chmod 600 /config/garage.toml
+    volumes:
+      - garage-config:/config
+    networks:
+      - eeylxzuvyicq5i5lelcrcda9
+
+  garage:
+    image: dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    env_file:
+      - /opt/smartdiag504-demo/secrets/s3.env
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    volumes:
+      - garage-config:/etc/garage:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    depends_on:
+      garage-configurator: {condition: service_completed_successfully}
+    networks:
+      - eeylxzuvyicq5i5lelcrcda9
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 15s
+      timeout: 8s
+      retries: 10
+      start_period: 20s
+
+  erp-sync-worker:
+    image: smartdiag504-demo-platform-api:latest
+    restart: unless-stopped
+    env_file:
+      - /data/coolify/services/eeylxzuvyicq5i5lelcrcda9/.env
+      - /opt/smartdiag504-demo/secrets/frappe.env
+      - /opt/smartdiag504-demo/secrets/smtp.env
+    environment:
+      PYTHONPATH: /srv/platform-api
+      ENVIRONMENT: staging
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
+      EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      FRAPPE_REQUIRED: "true"
+      INVOICE_VERIFICATION_MODE: strict
+    command:
+      - /bin/sh
+      - -c
+      - while true; do python scripts/run_erp_sync.py; sleep 15; done
+    healthcheck:
+      disable: true
+    networks:
+      - eeylxzuvyicq5i5lelcrcda9
+
+  notification-worker:
+    image: smartdiag504-demo-platform-api:latest
+    restart: unless-stopped
+    env_file:
+      - /data/coolify/services/eeylxzuvyicq5i5lelcrcda9/.env
+      - /opt/smartdiag504-demo/secrets/frappe.env
+    environment:
+      PYTHONPATH: /srv/platform-api
+      ENVIRONMENT: staging
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
+      EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      WHATSAPP_WEBHOOK_URL: ${WHATSAPP_WEBHOOK_URL:-}
+      WHATSAPP_WEBHOOK_TOKEN: ${WHATSAPP_WEBHOOK_TOKEN:-}
+      SMS_WEBHOOK_URL: ${SMS_WEBHOOK_URL:-}
+      SMS_WEBHOOK_TOKEN: ${SMS_WEBHOOK_TOKEN:-}
+      PUSH_WEBHOOK_URL: ${PUSH_WEBHOOK_URL:-}
+      PUSH_WEBHOOK_TOKEN: ${PUSH_WEBHOOK_TOKEN:-}
+    command:
+      - /bin/sh
+      - -c
+      - while true; do python scripts/run_notification_delivery.py; sleep 15; done
+    healthcheck:
+      disable: true
+    networks:
+      - eeylxzuvyicq5i5lelcrcda9
+
+volumes:
+  platform-private:
+    external: true
+    name: smartdiag504-demo_platform-private
+  garage-config:
+    external: true
+    name: smartdiag504-demo_garage-config
+  garage-meta:
+    external: true
+    name: smartdiag504-demo_garage-meta
+  garage-data:
+    external: true
+    name: smartdiag504-demo_garage-data
+  clamav-db:
+    external: true
+    name: smartdiag504-demo_clamav-db

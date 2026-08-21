@@ -1,0 +1,841 @@
+name: ${COMPOSE_PROJECT_NAME:-smartdiag504}
+
+x-platform-image: &platform-image
+  image: smartdiag504/platform-api:${APP_IMAGE_TAG:-0.4.0}
+  build:
+    context: .
+    dockerfile: services/platform-api/Dockerfile
+  pull_policy: ${PULL_POLICY:-missing}
+
+x-platform-environment: &platform-environment
+  APP_VERSION: ${APP_IMAGE_TAG:-0.4.0}
+  ENVIRONMENT: ${ENVIRONMENT:-production}
+  SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis-platform:6379/0
+  MEDIA_ROOT: /var/lib/smartdiag/media
+  MEDIA_BACKEND: ${MEDIA_BACKEND:-filesystem}
+  PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL:-/media}
+  S3_ENDPOINT_URL: ${S3_ENDPOINT:-http://garage:3900}
+  S3_BUCKET: ${S3_BUCKET:-smartdiag-evidence}
+  S3_REGION: ${S3_REGION:-garage}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+  ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+  EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
+  CORS_ORIGINS: ${CORS_ORIGINS:-https://smartdiag504.com,https://clientes.smartdiag504.com,https://app.smartdiag504.com}
+  GOOGLE_CSE_API_KEY: ${GOOGLE_CSE_API_KEY:-}
+  GOOGLE_CSE_ID: ${GOOGLE_CSE_ID:-}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-8}
+  FRAPPE_BASE_URL: http://frappe-frontend:8080
+  FRAPPE_API_KEY: ${FRAPPE_API_KEY:-}
+  FRAPPE_API_SECRET: ${FRAPPE_API_SECRET:-}
+  FRAPPE_PRICE_LIST: ${FRAPPE_PRICE_LIST:-Standard Selling}
+  INVOICE_VERIFICATION_MODE: ${INVOICE_VERIFICATION_MODE:-strict}
+  PUBLIC_CHAT_ENABLED: ${PUBLIC_CHAT_ENABLED:-true}
+  CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
+  AI_GATEWAY_URL: http://haproxy:8083
+  AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+  AI_GATEWAY_TIMEOUT_SECONDS: ${AI_GATEWAY_TIMEOUT_SECONDS:-25}
+  CHATBOT_SESSION_TTL_MINUTES: ${CHATBOT_SESSION_TTL_MINUTES:-1440}
+  CHATBOT_HISTORY_LIMIT: ${CHATBOT_HISTORY_LIMIT:-12}
+  CHATBOT_RATE_LIMIT_MESSAGES: ${CHATBOT_RATE_LIMIT_MESSAGES:-30}
+  CHATBOT_RATE_WINDOW_SECONDS: ${CHATBOT_RATE_WINDOW_SECONDS:-3600}
+  CHATBOT_WELCOME_MESSAGE: ${CHATBOT_WELCOME_MESSAGE:-Hola, soy el asistente de SmartDiag504. Puedo orientarle sobre servicios, reservas, repuestos y el proceso de su vehículo.}
+  CHATBOT_PRIVACY_NOTICE: ${CHATBOT_PRIVACY_NOTICE:-La conversación se guarda temporalmente para atender su consulta. No comparta contraseñas, tarjetas ni datos bancarios.}
+  CHATBOT_QUICK_PROMPTS: ${CHATBOT_QUICK_PROMPTS:-Reservar diagnóstico|Buscar repuesto|Consultar servicios|Contactar por WhatsApp}
+  CHATBOT_QUICK_ACTION_CODES: ${CHATBOT_QUICK_ACTION_CODES:-BOOK_SERVICE|SEARCH_PARTS|CONTACT_WHATSAPP}
+  BUSINESS_NAME: ${BUSINESS_NAME:-SmartDiag504}
+  BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+  BUSINESS_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+  BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+  BUSINESS_HOURS: ${BUSINESS_HOURS:-Horario sujeto a confirmación}
+
+x-ai-environment: &ai-environment
+  ENVIRONMENT: ${ENVIRONMENT:-production}
+  AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+  LLM_PROVIDER: ${LLM_PROVIDER:-demo}
+  LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
+  LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b-instruct}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  CHROMA_URL: http://chromadb:8000
+  CHROMA_ENABLED: ${CHROMA_ENABLED:-false}
+  CHROMA_COLLECTION: ${CHROMA_COLLECTION:-smartdiag_knowledge}
+  BUSINESS_NAME: ${BUSINESS_NAME:-SmartDiag504}
+  BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+  BUSINESS_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+  BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+  BUSINESS_HOURS: ${BUSINESS_HOURS:-Horario sujeto a confirmación}
+
+x-frappe-image: &frappe-image
+  image: ${FRAPPE_IMAGE:-smartdiag504/frappe-workshop}:${FRAPPE_IMAGE_TAG:-0.4.0}
+  build:
+    context: .
+    dockerfile: infra/frappe/Containerfile
+    args:
+      FRAPPE_IMAGE_TAG: ${FRAPPE_BASE_IMAGE_TAG:-version-16}
+      FRAPPE_BRANCH: ${FRAPPE_BRANCH:-v16.31.0}
+      BEVEREN_REF: ${BEVEREN_REF:-ab6d56d1069882326475f256d09cc63236eddec1}
+    secrets:
+      - source: apps_json
+        target: apps_json
+  pull_policy: ${FRAPPE_PULL_POLICY:-build}
+
+x-frappe-runtime: &frappe-runtime
+  <<: *frappe-image
+  restart: unless-stopped
+  volumes:
+    - frappe-sites:/home/frappe/frappe-bench/sites
+    - frappe-logs:/home/frappe/frappe-bench/logs
+  networks: [app, data, egress]
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@smartdiag504.com}
+      PUBLIC_SITE_ADDRESS: ${PUBLIC_SITE_ADDRESS:-smartdiag504.com}
+      CUSTOMER_SITE_ADDRESS: ${CUSTOMER_SITE_ADDRESS:-clientes.smartdiag504.com}
+      OPS_SITE_ADDRESS: ${OPS_SITE_ADDRESS:-app.smartdiag504.com}
+      API_SITE_ADDRESS: ${API_SITE_ADDRESS:-api.smartdiag504.com}
+      ERP_SITE_ADDRESS: ${ERP_SITE_ADDRESS:-admin.smartdiag504.com}
+      FRAPPE_SITE_NAME: ${FRAPPE_SITE_NAME:-admin.smartdiag504.com}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      haproxy: {condition: service_healthy}
+    networks: [edge, app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:2019/config/ >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  haproxy:
+    image: haproxy:3.0-alpine
+    restart: unless-stopped
+    volumes:
+      - ./infra/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks: [app]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8404/stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  public-web-a:
+    image: smartdiag504/public-web:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: ./apps/public-web
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+        VITE_BUSINESS_EMAIL: ${BUSINESS_EMAIL:-info@smartdiag504.com}
+        VITE_BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+        VITE_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 4s
+      retries: 4
+
+  public-web-b:
+    image: smartdiag504/public-web:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: ./apps/public-web
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_BUSINESS_PHONE: ${BUSINESS_PHONE:-+504 0000-0000}
+        VITE_BUSINESS_EMAIL: ${BUSINESS_EMAIL:-info@smartdiag504.com}
+        VITE_BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-San Pedro Sula, Honduras}
+        VITE_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL:-https://wa.me/50400000000}
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 4s
+      retries: 4
+
+  ops-web-a:
+    image: smartdiag504/ops-web:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: ./apps/ops-web
+      args: {VITE_API_BASE_URL: ""}
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 4s
+      retries: 4
+
+  ops-web-b:
+    image: smartdiag504/ops-web:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: ./apps/ops-web
+      args: {VITE_API_BASE_URL: ""}
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+      interval: 10s
+      timeout: 4s
+      retries: 4
+
+  platform-migrate:
+    <<: *platform-image
+    restart: "no"
+    environment: *platform-environment
+    command: ["alembic", "upgrade", "head"]
+    volumes:
+      - platform-media:/var/lib/smartdiag/media
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis-platform: {condition: service_healthy}
+    networks: [app, data, egress]
+
+  platform-seed:
+    <<: *platform-image
+    restart: "no"
+    environment: *platform-environment
+    command: ["python", "scripts/seed.py"]
+    volumes:
+      - platform-media:/var/lib/smartdiag/media
+    depends_on:
+      platform-migrate: {condition: service_completed_successfully}
+    networks: [app, data, egress]
+
+  platform-api-a:
+    <<: *platform-image
+    restart: unless-stopped
+    environment:
+      <<: *platform-environment
+      NODE_ID: ${NODE_A_ID:-smartdiag-api-a}
+      NODE_ROLE: platform-api
+    volumes:
+      - platform-media:/var/lib/smartdiag/media
+    depends_on:
+      platform-seed: {condition: service_completed_successfully}
+    networks: [app, data, egress]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 10s
+
+  platform-api-b:
+    <<: *platform-image
+    restart: unless-stopped
+    environment:
+      <<: *platform-environment
+      NODE_ID: ${NODE_B_ID:-smartdiag-api-b}
+      NODE_ROLE: platform-api
+    volumes:
+      - platform-media:/var/lib/smartdiag/media
+    depends_on:
+      platform-seed: {condition: service_completed_successfully}
+    networks: [app, data, egress]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 10s
+
+  ai-gateway-a:
+    image: smartdiag504/ai-gateway:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/ai-gateway/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment: *ai-environment
+    depends_on:
+      chromadb: {condition: service_healthy}
+    networks: [app, data, egress]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 10s
+
+  ai-gateway-b:
+    image: smartdiag504/ai-gateway:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/ai-gateway/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment: *ai-environment
+    depends_on:
+      chromadb: {condition: service_healthy}
+    networks: [app, data, egress]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 10s
+
+  heartbeat-a:
+    image: smartdiag504/heartbeat-agent:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/heartbeat-agent/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment:
+      API_URL: http://haproxy:8082
+      HEARTBEAT_TOKEN: ${EVENT_HMAC_SECRET}
+      NODE_ID: ${NODE_A_ID:-smartdiag-api-a}
+      NODE_ROLE: application-replica
+      APP_VERSION: ${APP_IMAGE_TAG:-0.4.0}
+      TARGET_HEALTH_URL: http://platform-api-a:8000/ready
+      HEARTBEAT_INTERVAL_SECONDS: ${HEARTBEAT_INTERVAL_SECONDS:-10}
+    depends_on:
+      platform-api-a: {condition: service_healthy}
+      haproxy: {condition: service_healthy}
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8091/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  heartbeat-b:
+    image: smartdiag504/heartbeat-agent:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/heartbeat-agent/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment:
+      API_URL: http://haproxy:8082
+      HEARTBEAT_TOKEN: ${EVENT_HMAC_SECRET}
+      NODE_ID: ${NODE_B_ID:-smartdiag-api-b}
+      NODE_ROLE: application-replica
+      APP_VERSION: ${APP_IMAGE_TAG:-0.4.0}
+      TARGET_HEALTH_URL: http://platform-api-b:8000/ready
+      HEARTBEAT_INTERVAL_SECONDS: ${HEARTBEAT_INTERVAL_SECONDS:-10}
+    depends_on:
+      platform-api-b: {condition: service_healthy}
+      haproxy: {condition: service_healthy}
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8091/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  alerts-worker-a:
+    image: smartdiag504/alerts-worker:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/alerts-worker/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment:
+      API_URL: http://haproxy:8082
+      HEARTBEAT_TOKEN: ${EVENT_HMAC_SECRET}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      NODE_ID: ${NODE_A_ID:-smartdiag-api-a}-alerts
+      LEASE_NAME: alerts-worker
+      APP_VERSION: ${APP_IMAGE_TAG:-0.4.0}
+      POLL_INTERVAL_SECONDS: ${ALERTS_POLL_INTERVAL_SECONDS:-15}
+    depends_on:
+      haproxy: {condition: service_healthy}
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8090/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  alerts-worker-b:
+    image: smartdiag504/alerts-worker:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: services/alerts-worker/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment:
+      API_URL: http://haproxy:8082
+      HEARTBEAT_TOKEN: ${EVENT_HMAC_SECRET}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      NODE_ID: ${NODE_B_ID:-smartdiag-api-b}-alerts
+      LEASE_NAME: alerts-worker
+      APP_VERSION: ${APP_IMAGE_TAG:-0.4.0}
+      POLL_INTERVAL_SECONDS: ${ALERTS_POLL_INTERVAL_SECONDS:-15}
+    depends_on:
+      haproxy: {condition: service_healthy}
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8090/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis-platform:
+    image: valkey/valkey:8.1.9-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis-platform-data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a '${REDIS_PASSWORD}' ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:1.5.9
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /chroma/chroma
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chroma-data:/chroma/chroma
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v2/heartbeat', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  garage-configurator:
+    image: alpine:3.22
+    restart: "no"
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
+      GARAGE_METRICS_TOKEN: ${GARAGE_METRICS_TOKEN}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        umask 077
+        mkdir -p /config
+        cat > /config/garage.toml <<EOF
+        metadata_dir = "/var/lib/garage/meta"
+        data_dir = "/var/lib/garage/data"
+        db_engine = "sqlite"
+        replication_factor = 1
+        rpc_bind_addr = "[::]:3901"
+        rpc_public_addr = "garage:3901"
+        rpc_secret = "$${GARAGE_RPC_SECRET}"
+        [s3_api]
+        s3_region = "garage"
+        api_bind_addr = "[::]:3900"
+        root_domain = ".s3.garage.local"
+        [admin]
+        api_bind_addr = "[::]:3903"
+        admin_token = "$${GARAGE_ADMIN_TOKEN}"
+        metrics_token = "$${GARAGE_METRICS_TOKEN}"
+        EOF
+        chmod 600 /config/garage.toml
+    volumes:
+      - garage-config:/config
+    networks: [data]
+
+  garage:
+    image: dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
+      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-smartdiag-evidence}
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    volumes:
+      - garage-config:/etc/garage:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    depends_on:
+      garage-configurator: {condition: service_completed_successfully}
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 15s
+      timeout: 8s
+      retries: 10
+      start_period: 20s
+
+  mariadb:
+    image: mariadb:11.8
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --innodb-file-per-table=1
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis-cache:
+    image: valkey/valkey:8.1.9-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--save", "", "--appendonly", "no", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis-cache-data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a '${REDIS_PASSWORD}' ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-queue:
+    image: valkey/valkey:8.1.9-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis-queue-data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a '${REDIS_PASSWORD}' ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frappe-configurator:
+    <<: *frappe-image
+    restart: "no"
+    entrypoint: ["bash", "-c"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command:
+      - >-
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host mariadb;
+        bench set-config -gp db_port 3306;
+        bench set-config -g redis_cache "redis://:$$REDIS_PASSWORD@redis-cache:6379";
+        bench set-config -g redis_queue "redis://:$$REDIS_PASSWORD@redis-queue:6379";
+        bench set-config -g redis_socketio "redis://:$$REDIS_PASSWORD@redis-queue:6379";
+        bench set-config -gp socketio_port 9000;
+        bench set-config -g chromium_path /usr/bin/chromium-headless-shell;
+    volumes:
+      - frappe-sites:/home/frappe/frappe-bench/sites
+      - frappe-logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      mariadb: {condition: service_healthy}
+      redis-cache: {condition: service_healthy}
+      redis-queue: {condition: service_healthy}
+    networks: [data]
+
+  frappe-site-init:
+    <<: *frappe-image
+    restart: "no"
+    entrypoint: ["/usr/local/bin/bootstrap-site.sh"]
+    environment:
+      ERP_SITE_NAME: ${ERP_SITE_NAME:-admin.smartdiag504.com}
+      ERP_ADMIN_PASSWORD: ${ERP_ADMIN_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      ERP_EXTERNAL_URL: https://${ERP_SITE_ADDRESS:-admin.smartdiag504.com}
+      FRAPPE_API_KEY: ${FRAPPE_API_KEY}
+      FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
+    volumes:
+      - frappe-sites:/home/frappe/frappe-bench/sites
+      - frappe-logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      frappe-configurator: {condition: service_completed_successfully}
+      mariadb: {condition: service_healthy}
+      redis-cache: {condition: service_healthy}
+      redis-queue: {condition: service_healthy}
+    networks: [data, egress]
+
+  frappe-backend:
+    <<: *frappe-runtime
+    environment:
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+    depends_on:
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),3); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frappe-frontend:
+    <<: *frappe-runtime
+    command: ["nginx-entrypoint.sh"]
+    environment:
+      BACKEND: frappe-backend:8000
+      SOCKETIO: frappe-websocket:9000
+      FRAPPE_SITE_NAME_HEADER: ${ERP_SITE_NAME:-admin.smartdiag504.com}
+      UPSTREAM_REAL_IP_ADDRESS: 0.0.0.0/0
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "on"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 100m
+    depends_on:
+      frappe-backend: {condition: service_healthy}
+      frappe-websocket: {condition: service_healthy}
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8080/api/method/ping',headers={'Host':'${ERP_SITE_NAME:-admin.smartdiag504.com}'}); urllib.request.urlopen(r,timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 5
+      start_period: 30s
+
+  frappe-websocket:
+    <<: *frappe-runtime
+    command: ["node", "/home/frappe/frappe-bench/apps/frappe/socketio.js"]
+    depends_on:
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "node", "-e", "const n=require('net');const s=n.connect(9000,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frappe-queue-short:
+    <<: *frappe-runtime
+    command: ["bench", "worker", "--queue", "short,default"]
+    depends_on:
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; assert b'worker' in Path('/proc/1/cmdline').read_bytes()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frappe-queue-long:
+    <<: *frappe-runtime
+    command: ["bench", "worker", "--queue", "long,default,short"]
+    depends_on:
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; assert b'worker' in Path('/proc/1/cmdline').read_bytes()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frappe-scheduler:
+    <<: *frappe-runtime
+    command: ["bench", "schedule"]
+    depends_on:
+      frappe-site-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; assert b'schedule' in Path('/proc/1/cmdline').read_bytes()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  backup-runner:
+    image: smartdiag504/backup-runner:${APP_IMAGE_TAG:-0.4.0}
+    build:
+      context: .
+      dockerfile: infra/backup/Dockerfile
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MARIADB_HOST: mariadb
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-21600}
+      LOCAL_BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_KEY:-}
+    volumes:
+      - backup-data:/backups
+      - frappe-sites:/source/frappe-sites:ro
+      - platform-media:/source/platform-media:ro
+      - garage-config:/source/garage-config:ro
+      - garage-meta:/source/garage-meta:ro
+      - garage-data:/source/garage-data:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+      mariadb: {condition: service_healthy}
+      garage: {condition: service_healthy}
+    networks: [data, egress]
+    healthcheck:
+      test: ["CMD-SHELL", "test ! -f /backups/LAST_SUCCESS || test $$(($$(date +%s)-$$(stat -c %Y /backups/LAST_SUCCESS))) -lt 90000"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  ollama:
+    image: ollama/ollama:0.32.5
+    profiles: ["local-ai"]
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  ollama-model-init:
+    image: curlimages/curl:8.14.1
+    profiles: ["local-ai"]
+    restart: "no"
+    environment:
+      OLLAMA_MODEL: ${LLM_MODEL:-qwen2.5:7b-instruct}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        curl -fsS http://ollama:11434/api/pull -d "{\"name\":\"$${OLLAMA_MODEL}\",\"stream\":false}"
+    networks: [data]
+    depends_on:
+      ollama: {condition: service_healthy}
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: ["--config.file=/etc/blackbox_exporter/config.yml"]
+    volumes:
+      - ./infra/monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:9115/-/healthy >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: ["observability"]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    networks: [app, data, egress]
+    depends_on:
+      blackbox-exporter: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:9090/-/healthy >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    profiles: ["observability"]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-smartdiag-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    networks: [app]
+    depends_on:
+      prometheus: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/api/health >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+networks:
+  edge: {}
+  app:
+    internal: true
+  data:
+    internal: true
+  egress: {}
+
+volumes:
+  caddy-data: {}
+  caddy-config: {}
+  platform-media: {}
+  frappe-sites: {}
+  frappe-logs: {}
+  mariadb-data: {}
+  redis-cache-data: {}
+  redis-queue-data: {}
+  postgres-data: {}
+  redis-platform-data: {}
+  chroma-data: {}
+  garage-config: {}
+  garage-meta: {}
+  garage-data: {}
+  backup-data: {}
+  ollama-data: {}
+  prometheus-data: {}
+  grafana-data: {}
+
+secrets:
+  apps_json:
+    file: ./infra/frappe/apps.json

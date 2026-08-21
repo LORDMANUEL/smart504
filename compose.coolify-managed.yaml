@@ -1,0 +1,245 @@
+name: smartdiag504-demo
+
+x-api-env: &api-env
+  PYTHONPATH: /srv/platform-api
+  ENVIRONMENT: staging
+  SEED_DEMO_DATA: "true"
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+  CASHIER_ACCESS_CODE: ${CASHIER_ACCESS_CODE}
+  EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
+  CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
+  CLIENT_DEMO_EMAIL: ${CLIENT_DEMO_EMAIL}
+  CLIENT_DEMO_PASSWORD: ${CLIENT_DEMO_PASSWORD}
+  AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+  PUBLIC_CHAT_ENABLED: "true"
+  AI_GATEWAY_URL: http://ai-gateway:8000
+  FRAPPE_REQUIRED: "false"
+  INVOICE_VERIFICATION_MODE: development
+  FRAPPE_BASE_URL: ${FRAPPE_BASE_URL:-}
+  FRAPPE_API_KEY: ${FRAPPE_API_KEY:-}
+  FRAPPE_API_SECRET: ${FRAPPE_API_SECRET:-}
+  FRAPPE_COMPANY: ${FRAPPE_COMPANY:-SmartDiag504 Demo}
+  FRAPPE_PRICE_LIST: ${FRAPPE_PRICE_LIST:-Standard Selling}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-notificaciones@smartdiag504.com}
+  WHATSAPP_WEBHOOK_URL: ${WHATSAPP_WEBHOOK_URL:-}
+  WHATSAPP_WEBHOOK_TOKEN: ${WHATSAPP_WEBHOOK_TOKEN:-}
+  SMS_WEBHOOK_URL: ${SMS_WEBHOOK_URL:-}
+  SMS_WEBHOOK_TOKEN: ${SMS_WEBHOOK_TOKEN:-}
+  PUSH_WEBHOOK_URL: ${PUSH_WEBHOOK_URL:-}
+  PUSH_WEBHOOK_TOKEN: ${PUSH_WEBHOOK_TOKEN:-}
+  CORS_ORIGINS: https://taller.nexusmedi.org
+  MEDIA_ROOT: /var/lib/smartdiag/media
+  PRIVATE_EVIDENCE_ROOT: /var/lib/smartdiag/private/evidence
+  PUBLIC_MEDIA_BASE_URL: /media
+
+services:
+  gateway:
+    image: smartdiag504-demo-gateway:latest
+    restart: unless-stopped
+    expose: ["8084"]
+    depends_on:
+      public-web: {condition: service_healthy}
+      ops-web: {condition: service_healthy}
+      platform-api: {condition: service_healthy}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8084/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  public-web:
+    image: smartdiag504-demo-public-web:latest
+    restart: unless-stopped
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  ops-web:
+    image: smartdiag504-demo-ops-web:latest
+    restart: unless-stopped
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+
+  migrate:
+    image: smartdiag504-demo-platform-api:latest
+    restart: "no"
+    environment: *api-env
+    command: ["alembic", "upgrade", "head"]
+    volumes: ["platform-media:/var/lib/smartdiag/media", "platform-private:/var/lib/smartdiag/private"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  seed:
+    image: smartdiag504-demo-platform-api:latest
+    restart: "no"
+    environment: *api-env
+    command: ["python", "scripts/seed.py"]
+    volumes: ["platform-media:/var/lib/smartdiag/media", "platform-private:/var/lib/smartdiag/private"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  platform-api:
+    image: smartdiag504-demo-platform-api:latest
+    restart: unless-stopped
+    environment: *api-env
+    expose: ["8000"]
+    volumes: ["platform-media:/var/lib/smartdiag/media", "platform-private:/var/lib/smartdiag/private"]
+    depends_on:
+      seed: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  erp-sync-worker:
+    image: smartdiag504-demo-platform-api:latest
+    restart: unless-stopped
+    environment: *api-env
+    command:
+      - /bin/sh
+      - -c
+      - while true; do python scripts/run_erp_sync.py; sleep 15; done
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+
+  notification-worker:
+    image: smartdiag504-demo-platform-api:latest
+    restart: unless-stopped
+    environment: *api-env
+    command:
+      - /bin/sh
+      - -c
+      - while true; do python scripts/run_notification_delivery.py; sleep 15; done
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+
+  chromadb:
+    image: chromadb/chroma:1.5.9
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /chroma/chroma
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes: ["chroma-data:/chroma/chroma"]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes: ["ollama-data:/root/.ollama"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 20s
+      timeout: 8s
+      retries: 15
+
+  ollama-model-init:
+    image: curlimages/curl:8.14.1
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["curl -fsS http://ollama:11434/api/pull -d '{\"name\":\"gemma3:270m\",\"stream\":false}'"]
+    depends_on:
+      ollama: {condition: service_healthy}
+
+  ai-gateway:
+    image: smartdiag504-demo-ai-gateway:latest
+    restart: unless-stopped
+    environment:
+      HOME: /tmp
+      ENVIRONMENT: staging
+      AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+      LLM_PROVIDER: ollama
+      LLM_BASE_URL: http://ollama:11434/v1
+      LLM_MODEL: gemma3:270m
+      CHROMA_URL: http://chromadb:8000
+      CHROMA_ENABLED: "true"
+      CHROMA_COLLECTION: smartdiag_knowledge
+    depends_on:
+      chromadb: {condition: service_healthy}
+      ollama-model-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/ready"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+      start_period: 30s
+
+  rag-seed:
+    image: smartdiag504-demo-ai-gateway:latest
+    restart: "no"
+    environment:
+      HOME: /tmp
+      CHROMA_URL: http://chromadb:8000
+      CHROMA_COLLECTION: smartdiag_knowledge
+    command: ["python", "-m", "smartdiag_ai_gateway.rag_seed"]
+    depends_on:
+      chromadb: {condition: service_healthy}
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8.1.9-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a '${REDIS_PASSWORD}' ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  postgres-data:
+    external: true
+    name: smartdiag504-demo_postgres-data
+  redis-data:
+    external: true
+    name: smartdiag504-demo_redis-data
+  platform-media:
+    external: true
+    name: smartdiag504-demo_platform-media
+  platform-private:
+    external: true
+    name: smartdiag504-demo_platform-private
+  chroma-data:
+    external: true
+    name: smartdiag504-demo_chroma-data
+  ollama-data:
+    external: true
+    name: smartdiag504-demo_ollama-data

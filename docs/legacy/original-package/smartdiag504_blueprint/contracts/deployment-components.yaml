@@ -1,0 +1,38 @@
+version: 1
+profile: per-customer-isolated-stack
+components:
+  smartdiag_api:
+    runtime: python_fastapi
+    depends_on: [postgresql, redis, object_storage]
+  smartdiag_web:
+    runtime: typescript_web
+    depends_on: [smartdiag_api, oidc]
+  technician_pwa:
+    runtime: typescript_pwa
+    depends_on: [smartdiag_api, oidc]
+  storefront:
+    runtime: typescript_web
+    depends_on: [smartdiag_api]
+  worker:
+    runtime: python_worker
+    depends_on: [postgresql, redis, erpnext]
+  ai_rag:
+    runtime: python_service
+    depends_on: [chromadb, object_storage, redis]
+  erpnext:
+    role: financial_inventory_system_of_record
+  postgresql:
+    role: workshop_transactional_system_of_record
+  redis:
+    role: ephemeral_queue_cache_realtime
+  chromadb:
+    role: semantic_index_only
+  object_storage:
+    role: evidence_and_document_storage
+  oidc:
+    role: identity_provider
+isolation:
+  database: per_customer
+  erp_site: per_customer
+  vector_collection: per_customer_and_acl
+  object_namespace: per_customer

@@ -1,0 +1,5 @@
+import { CircleCheck, CircleX, Server, WifiOff } from 'lucide-react';
+import type { HaNode } from '../types';
+export function SystemStatus({ nodes }: { nodes: HaNode[] }) {
+  return <div className="system-status"><header className="content-header"><div><span>Infraestructura</span><h1>Heartbeats y nodos</h1><p>Un nodo saludable debe reportar dentro de la ventana configurada.</p></div></header><div className="node-grid">{nodes.length === 0 && <div className="disabled-feature"><WifiOff /><h2>Sin heartbeats registrados</h2><p>Los agentes empezarán a aparecer cuando los contenedores envíen su primer heartbeat.</p></div>}{nodes.map((node) => <article className="node-card" key={node.node_id}><span className={node.healthy && !node.stale ? 'node-card__icon node-card__icon--ok' : 'node-card__icon node-card__icon--bad'}>{node.healthy && !node.stale ? <CircleCheck /> : <CircleX />}</span><div><small>{node.role}</small><h2>{node.node_id}</h2><p>{node.stale ? 'Heartbeat vencido' : node.healthy ? 'Operativo' : 'Reportó falla'}</p></div><Server /></article>)}</div></div>;
+}

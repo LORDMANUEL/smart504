@@ -1,0 +1,34 @@
+ARG BASE_IMAGE=smartdiag504-erpnext-hrms:16
+FROM ${BASE_IMAGE}
+
+USER root
+COPY --chown=frappe:frappe packages/smartdiag_domain /tmp/smartdiag_domain
+RUN /home/frappe/frappe-bench/env/bin/pip install /tmp/smartdiag_domain \
+    && git clone https://github.com/Beveren-Software-Inc/Field_Service_Management \
+      /home/frappe/frappe-bench/apps/beveren_fsm \
+    && cd /home/frappe/frappe-bench/apps/beveren_fsm \
+    && git checkout ab6d56d1069882326475f256d09cc63236eddec1 \
+    && /home/frappe/frappe-bench/env/bin/pip install -e /home/frappe/frappe-bench/apps/beveren_fsm \
+    && printf '\nbeveren_fsm\n' >> /home/frappe/frappe-bench/sites/apps.txt \
+    && sort -u /home/frappe/frappe-bench/sites/apps.txt -o /home/frappe/frappe-bench/sites/apps.txt \
+    && chown -R frappe:frappe \
+      /home/frappe/frappe-bench/apps/beveren_fsm \
+      /home/frappe/frappe-bench/sites/apps.txt \
+      /tmp/smartdiag_domain
+
+USER frappe
+RUN cd /home/frappe/frappe-bench \
+    && bench build --app beveren_fsm
+
+USER root
+COPY --chown=frappe:frappe frappe-apps/smartdiag_workshop /home/frappe/frappe-bench/apps/smartdiag_workshop
+RUN /home/frappe/frappe-bench/env/bin/pip install -e /home/frappe/frappe-bench/apps/smartdiag_workshop \
+    && printf '\nsmartdiag_workshop\n' >> /home/frappe/frappe-bench/sites/apps.txt \
+    && sort -u /home/frappe/frappe-bench/sites/apps.txt -o /home/frappe/frappe-bench/sites/apps.txt \
+    && chown -R frappe:frappe \
+      /home/frappe/frappe-bench/apps/smartdiag_workshop \
+      /home/frappe/frappe-bench/sites/apps.txt
+
+USER frappe
+RUN cd /home/frappe/frappe-bench \
+    && bench build --app smartdiag_workshop

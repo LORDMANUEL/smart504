@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+APP_DIR=/usr/lib/smartdiag504/source
+ENV_FILE=/etc/smartdiag504/platform.env
+COMPOSE_FILE=${SMARTDIAG_COMPOSE_FILE:-$APP_DIR/compose.yaml}
+PROJECT_NAME=${SMARTDIAG_PROJECT_NAME:-smartdiag504}
+
+usage() { echo 'Uso: smartdiag504 {validate|deploy|migrate|status|logs|stop|version|paths}'; }
+require_root() { [ "$(id -u)" -eq 0 ] || { echo 'Este comando requiere sudo/root.' >&2; exit 1; }; }
+compose() { docker compose --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" --file "$COMPOSE_FILE" "$@"; }
+
+case "${1:-}" in
+  validate)
+    test -r "$ENV_FILE" || { echo "Falta $ENV_FILE" >&2; exit 1; }
+    command -v docker >/dev/null 2>&1 || { echo 'Docker no está instalado.' >&2; exit 1; }
+    docker compose version >/dev/null
+    if grep -Eq '=__GENERATE(_PRIVATE_PIN)?__$' "$ENV_FILE"; then
+      echo 'Hay secretos __GENERATE__ pendientes en platform.env.' >&2; exit 1
+    fi
+    compose config --quiet
+    echo 'Configuración válida. No se inició ningún contenedor.'
+    ;;
+  deploy) require_root; "$0" validate; compose build; compose up -d ;;
+  migrate) require_root; "$0" validate; compose run --rm migrate ;;
+  status) compose ps ;;
+  logs) compose logs --tail=200 "${2:-platform-api}" ;;
+  stop) require_root; compose stop ;;
+  version) echo 'SmartDiag504 Platform 0.4.0' ;;
+  paths) printf 'Código: %s\nConfiguración: %s\nCompose: %s\nDatos: %s\n' "$APP_DIR" "$ENV_FILE" "$COMPOSE_FILE" /var/lib/smartdiag504 ;;
+  *) usage; exit 2 ;;
+esac

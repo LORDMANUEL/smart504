@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "vehicle",
+  "customer",
+  "service_order",
+  "advisor",
+  "check_in_at",
+  "odometer",
+  "fuel_level",
+  "reason",
+  "reported_symptoms",
+  "warning_lights",
+  "accessories",
+  "existing_damage",
+  "photos",
+  "signature",
+  "promised_at",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "Vehicle",
+   "options": "SmartDiag Vehicle",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1,
+   "fetch_from": "vehicle.customer"
+  },
+  {
+   "fieldname": "service_order",
+   "fieldtype": "Link",
+   "label": "Service Order",
+   "options": "Service Order"
+  },
+  {
+   "fieldname": "advisor",
+   "fieldtype": "Link",
+   "label": "Advisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "check_in_at",
+   "fieldtype": "Datetime",
+   "label": "Check In At",
+   "reqd": 1
+  },
+  {
+   "fieldname": "odometer",
+   "fieldtype": "Int",
+   "label": "Odometer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fuel_level",
+   "fieldtype": "Percent",
+   "label": "Fuel Level"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason for Visit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reported_symptoms",
+   "fieldtype": "Long Text",
+   "label": "Reported Symptoms"
+  },
+  {
+   "fieldname": "warning_lights",
+   "fieldtype": "Small Text",
+   "label": "Warning Lights"
+  },
+  {
+   "fieldname": "accessories",
+   "fieldtype": "Small Text",
+   "label": "Accessories"
+  },
+  {
+   "fieldname": "existing_damage",
+   "fieldtype": "Long Text",
+   "label": "Existing Damage"
+  },
+  {
+   "fieldname": "photos",
+   "fieldtype": "Table",
+   "label": "Photos",
+   "options": "Vehicle Check In Photo"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Attach Image",
+   "label": "Customer Signature"
+  },
+  {
+   "fieldname": "promised_at",
+   "fieldtype": "Datetime",
+   "label": "Promised At"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "DRAFT\nCOMPLETED\nCANCELLED",
+   "default": "DRAFT",
+   "in_list_view": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SmartDiag Workshop",
+ "name": "Vehicle Check In",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "format:SD-CI-{YYYY}-{#####}",
+ "naming_rule": "Expression",
+ "is_submittable": 1,
+ "title_field": "vehicle"
+}

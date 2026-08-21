@@ -1,0 +1,41 @@
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.21
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - /usr/local/bin/etcd
+      - --name=${NODE_NAME}
+      - --data-dir=/etcd-data
+      - --listen-peer-urls=http://${NODE_PRIVATE_IP}:2380
+      - --initial-advertise-peer-urls=http://${NODE_PRIVATE_IP}:2380
+      - --listen-client-urls=http://${NODE_PRIVATE_IP}:2379,http://127.0.0.1:2379
+      - --advertise-client-urls=http://${NODE_PRIVATE_IP}:2379
+      - --initial-cluster=smartdiag-a=${ETCD_A},smartdiag-b=${ETCD_B},smartdiag-witness=${ETCD_WITNESS}
+      - --initial-cluster-token=${ETCD_CLUSTER_TOKEN}
+      - --initial-cluster-state=new
+    volumes:
+      - etcd-data:/etcd-data
+
+  patroni:
+    build:
+      context: ../../../..
+      dockerfile: infra/ha/two-node/postgres/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      NODE_NAME: ${NODE_NAME}
+      NODE_PRIVATE_IP: ${NODE_PRIVATE_IP}
+      PATRONI_SCOPE: ${PATRONI_SCOPE}
+      ETCD_HOSTS: ${NODE_PRIVATE_IP}:2379,${PEER_PRIVATE_IP}:2379,${WITNESS_PRIVATE_IP}:2379
+      POSTGRES_SUPERUSER_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
+      POSTGRES_APPLICATION_PASSWORD: ${POSTGRES_APPLICATION_PASSWORD}
+    volumes:
+      - patroni-data:/var/lib/postgresql/data
+      - ./patroni.yml.template:/templates/patroni.yml.template:ro
+    depends_on: [etcd]
+
+volumes:
+  etcd-data:
+  patroni-data:

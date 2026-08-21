@@ -1,0 +1,82 @@
+version: 1
+roles:
+  OWNER_ADMIN:
+    scopes: [all]
+  SERVICE_ADVISOR:
+    scopes:
+      - customers.read_write
+      - vehicles.read_write
+      - appointments.read_write
+      - intake.read_write
+      - work_orders.read_write
+      - diagnostics.read
+      - estimates.read_write
+      - approvals.request
+      - delivery.prepare
+  WORKSHOP_MANAGER:
+    scopes:
+      - work_orders.read_write
+      - diagnostics.read_write
+      - technicians.assign
+      - bays.manage
+      - estimates.read
+      - quality.override_with_reason
+      - alerts.manage
+  TECHNICIAN:
+    scopes:
+      - assigned_work_orders.read
+      - diagnostics.create
+      - time_entries.own
+      - part_requests.create
+      - attachments.create
+      - operations.update_assigned
+  QUALITY_INSPECTOR:
+    scopes:
+      - work_orders.read
+      - quality.create
+      - road_tests.create
+      - release_to_invoice
+  PARTS_CLERK:
+    scopes:
+      - part_requests.read_write
+      - stock.read
+      - part_issues.create
+      - part_returns.create
+  BUYER:
+    scopes:
+      - purchase_requests.read_write
+      - suppliers.read
+      - purchase_orders.request
+  CASHIER:
+    scopes:
+      - invoices.read
+      - payments.create
+      - pos.sell
+      - cash_sessions.open_close
+  ACCOUNTANT:
+    scopes:
+      - finance.read_write_erp
+      - fiscal_documents.manage
+      - reconciliations.manage
+  ECOMMERCE_MANAGER:
+    scopes:
+      - catalog.manage_overrides
+      - online_orders.manage
+      - content.manage
+  AUDITOR:
+    scopes:
+      - all.read
+      - audit.export
+  CUSTOMER:
+    scopes:
+      - own_appointments.read_write
+      - own_work_orders.read
+      - own_estimates.approve
+      - own_documents.read
+      - own_payments.initiate
+separation_of_duties:
+  - rule: technician_cannot_change_prices
+  - rule: cashier_cannot_cancel_fiscal_document_without_approval
+  - rule: warehouse_cannot_approve_own_purchase
+  - rule: service_advisor_cannot_override_credit_block
+  - rule: llm_never_inherits_more_permissions_than_user

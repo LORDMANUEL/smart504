@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "bay_code",
+  "bay_name",
+  "branch",
+  "workshop",
+  "assigned_technician",
+  "status",
+  "active",
+  "capabilities"
+ ],
+ "fields": [
+  {
+   "fieldname": "bay_code",
+   "fieldtype": "Data",
+   "label": "Bay Code",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bay_name",
+   "fieldtype": "Data",
+   "label": "Bay Name",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "workshop",
+   "fieldtype": "Data",
+   "label": "Workshop"
+  },
+  {
+   "fieldname": "assigned_technician",
+   "fieldtype": "Link",
+   "label": "Assigned Technician",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "FREE\nRESERVED\nWAITING\nDIAGNOSIS\nAWAITING_APPROVAL\nAWAITING_PARTS\nIN_REPAIR\nQUALITY_CONTROL\nREADY\nOUT_OF_SERVICE",
+   "default": "FREE",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": 1
+  },
+  {
+   "fieldname": "capabilities",
+   "fieldtype": "Small Text",
+   "label": "Capabilities"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SmartDiag Workshop",
+ "name": "Workshop Bay",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:bay_code",
+ "naming_rule": "By fieldname",
+ "title_field": "bay_name"
+}

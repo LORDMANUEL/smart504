@@ -1,0 +1,56 @@
+flowchart LR
+    subgraph Users[Usuarios y canales]
+        A[Recepción / Asesor]
+        B[Técnico PWA]
+        C[Bodega]
+        D[Caja / Gerencia]
+        E[Cliente / Tienda]
+    end
+
+    subgraph Frontends[TypeScript]
+        W[SmartDiag Web]
+        P[Technician PWA]
+        S[Storefront y Portal]
+    end
+
+    subgraph Core[SmartDiag504 Workshop OS]
+        API[FastAPI Modular Core]
+        WRK[Workers / Scheduler]
+        ALR[Alert Engine]
+        INT[ERP Integration Adapter]
+        AIR[AI / RAG Service]
+    end
+
+    PG[(PostgreSQL)]
+    R[(Redis)]
+    CH[(ChromaDB)]
+    OBJ[(MinIO / S3)]
+    ERP[ERPNext v16]
+    LLM[LLM local o externo]
+    MSG[Email / WhatsApp / Push]
+
+    A --> W
+    C --> W
+    D --> W
+    B --> P
+    E --> S
+    W --> API
+    P --> API
+    S --> API
+
+    API --> PG
+    API --> OBJ
+    API --> R
+    API -->|outbox| WRK
+    WRK --> INT
+    INT <--> ERP
+    WRK --> ALR
+    ALR --> R
+    ALR --> MSG
+    API --> AIR
+    AIR --> CH
+    AIR --> OBJ
+    AIR --> LLM
+
+    ERP -. artículos, stock, compras, facturas, pagos, GL .-> INT
+    INT -. estados y referencias .-> PG

@@ -1,0 +1,80 @@
+{
+  email {$ACME_EMAIL:admin@smartdiag504.com}
+  admin 127.0.0.1:2019
+  servers {
+    trusted_proxies static private_ranges
+    client_ip_headers X-Forwarded-For X-Real-IP
+  }
+}
+
+(common_security) {
+  encode zstd gzip
+  header {
+    -Server
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  }
+}
+
+{$PUBLIC_SITE_ADDRESS} {
+  import common_security
+  handle /api/* {
+    reverse_proxy haproxy:8082
+  }
+  handle /media/* {
+    reverse_proxy haproxy:8082
+  }
+  handle {
+    reverse_proxy haproxy:8080
+  }
+}
+
+{$CUSTOMER_SITE_ADDRESS} {
+  import common_security
+  handle /api/* {
+    reverse_proxy haproxy:8082
+  }
+  handle /media/* {
+    reverse_proxy haproxy:8082
+  }
+  handle {
+    reverse_proxy haproxy:8080
+  }
+}
+
+{$OPS_SITE_ADDRESS} {
+  import common_security
+  handle /api/* {
+    reverse_proxy haproxy:8082
+  }
+  handle /media/* {
+    reverse_proxy haproxy:8082
+  }
+  handle {
+    reverse_proxy haproxy:8081
+  }
+}
+
+{$API_SITE_ADDRESS} {
+  import common_security
+  handle_path /ai/* {
+    reverse_proxy haproxy:8083
+  }
+  handle {
+    reverse_proxy haproxy:8082
+  }
+}
+
+{$ERP_SITE_ADDRESS} {
+  import common_security
+  request_body {
+    max_size 100MB
+  }
+  reverse_proxy frappe-frontend:8080 {
+    header_up Host {$FRAPPE_SITE_NAME}
+    header_up X-Frappe-Site-Name {$FRAPPE_SITE_NAME}
+  }
+}

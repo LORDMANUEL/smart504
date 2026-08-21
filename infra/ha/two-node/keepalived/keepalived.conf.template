@@ -1,0 +1,39 @@
+global_defs {
+    router_id ${NODE_NAME}
+    enable_script_security
+    script_user root
+}
+
+vrrp_script check_smartdiag_edge {
+    script "/usr/local/sbin/check-smartdiag-edge.sh"
+    interval 3
+    timeout 2
+    fall 2
+    rise 2
+    weight -60
+}
+
+vrrp_instance SMARTDIAG_VIP {
+    state ${VRRP_INITIAL_STATE}
+    interface ${NETWORK_INTERFACE}
+    virtual_router_id ${VRRP_ROUTER_ID}
+    priority ${VRRP_PRIORITY}
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass ${VRRP_AUTH_PASSWORD}
+    }
+    unicast_src_ip ${NODE_PRIVATE_IP}
+    unicast_peer {
+        ${PEER_PRIVATE_IP}
+    }
+    virtual_ipaddress {
+        ${VIP_ADDRESS}
+    }
+    track_script {
+        check_smartdiag_edge
+    }
+    notify_master "/usr/local/sbin/smartdiag-role.sh master"
+    notify_backup "/usr/local/sbin/smartdiag-role.sh backup"
+    notify_fault "/usr/local/sbin/smartdiag-role.sh fault"
+}

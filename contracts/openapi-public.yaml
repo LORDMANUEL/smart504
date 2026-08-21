@@ -1,0 +1,504 @@
+openapi: 3.1.0
+info:
+  title: SmartDiag504 Platform API
+  version: 0.4.0
+  description: >-
+    Contrato de las superficies públicas, de operación y administración de SmartDiag504.
+    ERPNext conserva la autoridad financiera y de inventario; esta API coordina catálogo,
+    reservas, chatbot, pedidos web y proyección operacional.
+servers:
+  - url: https://api.smartdiag504.com
+security: []
+tags:
+  - {name: system}
+  - {name: public-catalog}
+  - {name: booking}
+  - {name: public-chat}
+  - {name: store}
+  - {name: operations}
+  - {name: admin-catalog}
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: health
+      responses:
+        '200':
+          description: El proceso está vivo.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Health'}
+  /ready:
+    get:
+      tags: [system]
+      operationId: readiness
+      responses:
+        '200': {description: Dependencias obligatorias listas.}
+        '503': {description: Una dependencia o configuración crítica no está lista.}
+
+  /api/v1/catalog/categories:
+    get:
+      tags: [public-catalog]
+      operationId: listPublicCategories
+      responses:
+        '200':
+          description: Categorías publicadas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Category'}
+  /api/v1/catalog/products:
+    get:
+      tags: [public-catalog]
+      operationId: listProducts
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 120}}
+        - {name: category_id, in: query, schema: {type: string, format: uuid}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 24}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
+      responses:
+        '200':
+          description: Productos activos para publicación web.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Product'}
+  /api/v1/catalog/products/{slug}:
+    get:
+      tags: [public-catalog]
+      operationId: getProductBySlug
+      parameters:
+        - {$ref: '#/components/parameters/ProductSlug'}
+      responses:
+        '200':
+          description: Producto publicado.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Product'}
+        '404': {description: Producto no publicado o inexistente.}
+
+  /api/v1/bookings:
+    post:
+      tags: [booking]
+      operationId: createBooking
+      parameters:
+        - {name: Idempotency-Key, in: header, required: false, schema: {type: string, minLength: 8, maxLength: 128}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BookingCreate'}
+      responses:
+        '201':
+          description: Reserva creada.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Booking'}
+        '200':
+          description: Se devolvió la reserva idempotente existente.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Booking'}
+
+  /api/v1/chat/sessions:
+    post:
+      tags: [public-chat]
+      operationId: createPublicChatSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChatSessionCreate'}
+      responses:
+        '201':
+          description: Sesión opaca y temporal creada.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatSession'}
+        '403': {description: Chat público deshabilitado.}
+  /api/v1/chat/sessions/{session_id}/messages:
+    parameters:
+      - {$ref: '#/components/parameters/SessionId'}
+      - {$ref: '#/components/parameters/ChatSessionToken'}
+    get:
+      tags: [public-chat]
+      operationId: listPublicChatMessages
+      responses:
+        '200':
+          description: Historial autorizado de la sesión.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatHistory'}
+        '401': {description: Token de sesión inválido o expirado.}
+    post:
+      tags: [public-chat]
+      operationId: sendPublicChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChatMessageCreate'}
+      responses:
+        '201':
+          description: Mensaje procesado.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatReply'}
+        '200':
+          description: Repetición idempotente del mismo mensaje.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatReply'}
+        '401': {description: Token de sesión inválido o expirado.}
+        '429': {description: Límite de mensajes excedido.}
+  /api/v1/chat/sessions/{session_id}/close:
+    post:
+      tags: [public-chat]
+      operationId: closePublicChatSession
+      parameters:
+        - {$ref: '#/components/parameters/SessionId'}
+        - {$ref: '#/components/parameters/ChatSessionToken'}
+      responses:
+        '200': {description: Sesión cerrada y revocada.}
+        '401': {description: Token de sesión inválido o expirado.}
+
+  /api/v1/store/orders:
+    post:
+      tags: [store]
+      operationId: createStoreOrderRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StoreOrderCreate'}
+      responses:
+        '201':
+          description: Solicitud de pedido creada; todavía no constituye factura ni pago.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoreOrder'}
+        '200':
+          description: Se devolvió el pedido idempotente existente.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoreOrder'}
+        '409': {description: Precio, disponibilidad o producto cambió.}
+
+  /api/v1/operations/work-orders/board:
+    get:
+      tags: [operations]
+      operationId: getWorkOrderBoard
+      security: [{AdminToken: []}]
+      responses:
+        '200':
+          description: Tablero agrupado en los seis estados oficiales de OT.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/WorkOrderBoardColumn'}
+        '401': {description: Token administrativo inválido.}
+  /api/v1/operations/work-orders/{work_order_id}/transitions:
+    post:
+      tags: [operations]
+      operationId: transitionWorkOrder
+      security: [{AdminToken: []}]
+      parameters:
+        - {$ref: '#/components/parameters/WorkOrderId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkOrderTransition'}
+      responses:
+        '200': {description: Transición autorizada y auditada.}
+        '409': {description: Transición no permitida desde el estado actual.}
+  /api/v1/operations/settings/workshop:
+    get:
+      tags: [operations]
+      operationId: getWorkshopViewSettings
+      security: [{AdminToken: []}]
+      responses:
+        '200':
+          description: Configuración Kanban/bahías.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkshopSettings'}
+    put:
+      tags: [operations]
+      operationId: updateWorkshopViewSettings
+      security: [{AdminToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkshopSettings'}
+      responses:
+        '200': {description: Configuración actualizada.}
+
+  /api/v1/admin/catalog/products/{product_id}/images/upload:
+    post:
+      tags: [admin-catalog]
+      operationId: uploadProductImage
+      security: [{AdminToken: []}]
+      parameters:
+        - {$ref: '#/components/parameters/ProductId'}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, alt_text]
+              properties:
+                image: {type: string, format: binary}
+                alt_text: {type: string, maxLength: 240}
+                attribution: {type: string, maxLength: 500}
+      responses:
+        '201':
+          description: Imagen validada, almacenada y vinculada al producto.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductImage'}
+        '413': {description: Archivo excede el máximo configurado.}
+        '415': {description: Tipo de imagen no permitido.}
+  /api/v1/admin/catalog/products/{product_id}/images/import:
+    post:
+      tags: [admin-catalog]
+      operationId: importProductImage
+      security: [{AdminToken: []}]
+      parameters:
+        - {$ref: '#/components/parameters/ProductId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ImageImport'}
+      responses:
+        '201': {description: Imagen remota copiada al almacenamiento administrado.}
+  /api/v1/admin/catalog/images/google:
+    get:
+      tags: [admin-catalog]
+      operationId: searchGoogleProductImages
+      security: [{AdminToken: []}]
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 2, maxLength: 160}}
+      responses:
+        '200':
+          description: Candidatos devueltos por Google Programmable Search cuando está configurado.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/GoogleImageResult'}
+        '503': {description: Google CSE no está configurado.}
+
+components:
+  securitySchemes:
+    AdminToken:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+  parameters:
+    SessionId: {name: session_id, in: path, required: true, schema: {type: string, format: uuid}}
+    ChatSessionToken: {name: X-Chat-Session-Token, in: header, required: true, schema: {type: string, minLength: 32}}
+    ProductSlug: {name: slug, in: path, required: true, schema: {type: string}}
+    ProductId: {name: product_id, in: path, required: true, schema: {type: string, format: uuid}}
+    WorkOrderId: {name: work_order_id, in: path, required: true, schema: {type: string, format: uuid}}
+  schemas:
+    Health:
+      type: object
+      required: [status, service, version, node_id]
+      properties:
+        status: {const: ok}
+        service: {type: string}
+        version: {type: string}
+        node_id: {type: string}
+    Category:
+      type: object
+      required: [id, name, slug, active]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        slug: {type: string}
+        active: {type: boolean}
+    ProductImage:
+      type: object
+      required: [id, public_url, alt_text, source_type, mime_type, is_primary, sort_order]
+      properties:
+        id: {type: string, format: uuid}
+        public_url: {type: string}
+        alt_text: {type: string, minLength: 2, maxLength: 240}
+        source_type: {enum: [UPLOAD, EXTERNAL, GOOGLE, ERPNEXT]}
+        source_page_url: {type: [string, 'null'], format: uri}
+        attribution_text: {type: [string, 'null']}
+        mime_type: {type: string}
+        is_primary: {type: boolean}
+        sort_order: {type: integer}
+    Product:
+      type: object
+      required: [id, sku, slug, name, price, currency, stock_status, active, images]
+      properties:
+        id: {type: string, format: uuid}
+        sku: {type: string}
+        slug: {type: string}
+        name: {type: string}
+        short_description: {type: [string, 'null']}
+        description: {type: [string, 'null']}
+        brand: {type: [string, 'null']}
+        price: {type: string, pattern: '^\d+(\.\d{1,2})?$'}
+        currency: {type: string, minLength: 3, maxLength: 3}
+        stock_status: {enum: [IN_STOCK, LOW_STOCK, OUT_OF_STOCK, ON_REQUEST]}
+        compatibility_notes: {type: [string, 'null']}
+        active: {type: boolean}
+        images:
+          type: array
+          items: {$ref: '#/components/schemas/ProductImage'}
+    BookingCreate:
+      type: object
+      required: [full_name, phone, vehicle_summary, service_requested]
+      properties:
+        full_name: {type: string, minLength: 2, maxLength: 120}
+        phone: {type: string, minLength: 7, maxLength: 30}
+        email: {type: [string, 'null'], format: email}
+        vehicle_summary: {type: string, minLength: 3, maxLength: 200}
+        service_requested: {type: string, minLength: 2, maxLength: 120}
+        preferred_date: {type: [string, 'null'], format: date}
+        concern: {type: [string, 'null'], maxLength: 2000}
+    Booking:
+      allOf:
+        - {$ref: '#/components/schemas/BookingCreate'}
+        - type: object
+          required: [id, status, created_at]
+          properties:
+            id: {type: string, format: uuid}
+            status: {type: string}
+            created_at: {type: string, format: date-time}
+    ChatSessionCreate:
+      type: object
+      properties:
+        locale: {type: string, default: es-HN}
+        page_url: {type: [string, 'null'], format: uri}
+        referrer: {type: [string, 'null'], format: uri}
+        accepted_privacy: {type: boolean, const: true}
+    ChatSession:
+      type: object
+      required: [session_id, session_token, expires_at, welcome_message]
+      properties:
+        session_id: {type: string, format: uuid}
+        session_token: {type: string}
+        expires_at: {type: string, format: date-time}
+        welcome_message: {type: string}
+        quick_prompts: {type: array, items: {type: string}}
+        privacy_notice: {type: string}
+    ChatMessageCreate:
+      type: object
+      required: [message, client_message_id]
+      properties:
+        message: {type: string, minLength: 1, maxLength: 2000}
+        client_message_id: {type: string, minLength: 8, maxLength: 120}
+    ChatMessage:
+      type: object
+      required: [id, role, content, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        role: {enum: [user, assistant, system]}
+        content: {type: string}
+        created_at: {type: string, format: date-time}
+        audit_id: {type: [string, 'null']}
+        mode: {type: [string, 'null']}
+        suggested_actions: {type: array, items: {type: string}}
+    ChatReply:
+      type: object
+      required: [session_id, user_message, assistant_message, mode, suggested_actions]
+      properties:
+        session_id: {type: string, format: uuid}
+        user_message: {$ref: '#/components/schemas/ChatMessage'}
+        assistant_message: {$ref: '#/components/schemas/ChatMessage'}
+        audit_id: {type: [string, 'null']}
+        mode: {type: string}
+        suggested_actions: {type: array, items: {type: string}}
+    ChatHistory:
+      type: object
+      required: [session_id, messages]
+      properties:
+        session_id: {type: string, format: uuid}
+        messages:
+          type: array
+          items: {$ref: '#/components/schemas/ChatMessage'}
+    StoreOrderItemCreate:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id: {type: string, format: uuid}
+        quantity: {type: integer, minimum: 1, maximum: 20}
+    StoreOrderCreate:
+      type: object
+      required: [customer_name, phone, idempotency_key, items]
+      properties:
+        customer_name: {type: string, minLength: 2, maxLength: 120}
+        phone: {type: string, minLength: 7, maxLength: 30}
+        email: {type: [string, 'null'], format: email}
+        vehicle_vin: {type: [string, 'null'], minLength: 11, maxLength: 17}
+        notes: {type: [string, 'null'], maxLength: 2000}
+        idempotency_key: {type: string, minLength: 8, maxLength: 128}
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: {$ref: '#/components/schemas/StoreOrderItemCreate'}
+    StoreOrder:
+      type: object
+      required: [id, order_number, status, currency, subtotal, items]
+      properties:
+        id: {type: string, format: uuid}
+        order_number: {type: string}
+        status: {enum: [PENDING_CONFIRMATION, CONTACTED, CONFIRMED, SYNCED, CANCELLED]}
+        currency: {type: string}
+        subtotal: {type: string}
+        erpnext_sales_order_id: {type: [string, 'null']}
+        items: {type: array, items: {type: object}}
+    WorkOrderTransition:
+      type: object
+      required: [to_status]
+      properties:
+        to_status:
+          enum: [CREATED, QUOTED_BY_TECHNICIAN, PENDING_CUSTOMER_APPROVAL, PENDING_PARTS, READY_TO_INVOICE, INVOICED]
+        reason: {type: [string, 'null'], maxLength: 500}
+        actor_id: {type: [string, 'null'], maxLength: 120}
+    WorkOrderBoardColumn:
+      type: object
+      required: [status, label, items]
+      properties:
+        status:
+          enum: [CREATED, QUOTED_BY_TECHNICIAN, PENDING_CUSTOMER_APPROVAL, PENDING_PARTS, READY_TO_INVOICE, INVOICED]
+        label: {type: string}
+        items: {type: array, items: {type: object}}
+    WorkshopSettings:
+      type: object
+      required: [default_view, bays_enabled, bay_codes]
+      properties:
+        default_view: {enum: [KANBAN, BAYS]}
+        bays_enabled: {type: boolean}
+        bay_codes: {type: array, items: {type: string}}
+    ImageImport:
+      type: object
+      required: [image_url, alt_text]
+      properties:
+        image_url: {type: string, format: uri}
+        alt_text: {type: string, minLength: 2, maxLength: 240}
+        attribution_text: {type: [string, 'null'], maxLength: 500}
+        source_page_url: {type: [string, 'null'], format: uri}
+        license_name: {type: [string, 'null'], maxLength: 120}
+        license_url: {type: [string, 'null'], format: uri}
+        make_primary: {type: boolean, default: false}
+    GoogleImageResult:
+      type: object
+      required: [title, image_url, source_page_url]
+      properties:
+        title: {type: string}
+        image_url: {type: string, format: uri}
+        thumbnail_url: {type: [string, 'null'], format: uri}
+        source_page_url: {type: string, format: uri}

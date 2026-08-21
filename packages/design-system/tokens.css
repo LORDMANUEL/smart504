@@ -1,0 +1,89 @@
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --sd-navy-950: #071827;
+  --sd-navy-900: #0b2234;
+  --sd-navy-800: #12324a;
+  --sd-blue-700: #0867b2;
+  --sd-blue-600: #0878d1;
+  --sd-blue-500: #1690ec;
+  --sd-cyan-500: #17a9c2;
+  --sd-cyan-100: #dff6f9;
+  --sd-amber-600: #b97d17;
+  --sd-amber-500: #d89a24;
+  --sd-amber-100: #fff2d4;
+  --sd-white: #ffffff;
+
+  /* Neutral */
+  --sd-slate-25: #fbfcfd;
+  --sd-slate-50: #f6f8fa;
+  --sd-slate-100: #edf1f5;
+  --sd-slate-200: #dfe6ec;
+  --sd-slate-300: #c5d0da;
+  --sd-slate-500: #7b8c9b;
+  --sd-slate-700: #3f5364;
+  --sd-ink: #10202f;
+  --sd-muted: #5e7182;
+
+  /* Semantic */
+  --sd-success: #18875d;
+  --sd-success-soft: #e3f5ed;
+  --sd-warning: #b56b08;
+  --sd-warning-soft: #fff0d4;
+  --sd-danger: #bd3b35;
+  --sd-danger-soft: #fce8e6;
+  --sd-info: #126fae;
+  --sd-info-soft: #e3f2fc;
+  --sd-focus-ring: #72b9ef;
+
+  /* Typography */
+  --sd-font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --sd-font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --sd-text-xs: 0.75rem;
+  --sd-text-sm: 0.875rem;
+  --sd-text-md: 1rem;
+  --sd-text-lg: 1.125rem;
+  --sd-text-xl: 1.375rem;
+  --sd-text-2xl: clamp(1.75rem, 2.4vw, 2.5rem);
+  --sd-text-hero: clamp(2.6rem, 6vw, 5.8rem);
+  --sd-leading-tight: 1.08;
+  --sd-leading-normal: 1.55;
+  --sd-tracking-tight: -0.035em;
+
+  /* Spacing */
+  --sd-space-1: 0.25rem;
+  --sd-space-2: 0.5rem;
+  --sd-space-3: 0.75rem;
+  --sd-space-4: 1rem;
+  --sd-space-5: 1.25rem;
+  --sd-space-6: 1.5rem;
+  --sd-space-8: 2rem;
+  --sd-space-10: 2.5rem;
+  --sd-space-12: 3rem;
+  --sd-space-16: 4rem;
+  --sd-space-20: 5rem;
+  --sd-space-24: 6rem;
+
+  /* Geometry */
+  --sd-radius-xs: 0.35rem;
+  --sd-radius-sm: 0.65rem;
+  --sd-radius-md: 1rem;
+  --sd-radius-lg: 1.5rem;
+  --sd-radius-pill: 999px;
+  --sd-border: 1px solid var(--sd-slate-200);
+  --sd-shadow-sm: 0 1px 2px rgb(7 24 39 / 0.06), 0 4px 12px rgb(7 24 39 / 0.04);
+  --sd-shadow-md: 0 10px 30px rgb(7 24 39 / 0.10);
+  --sd-shadow-lg: 0 24px 70px rgb(7 24 39 / 0.16);
+
+  /* Layout */
+  --sd-content-max: 1200px;
+  --sd-reading-max: 720px;
+  --sd-sidebar-width: 248px;
+  --sd-header-height: 72px;
+
+  /* Motion */
+  --sd-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sd-duration-fast: 140ms;
+  --sd-duration-normal: 240ms;
+}

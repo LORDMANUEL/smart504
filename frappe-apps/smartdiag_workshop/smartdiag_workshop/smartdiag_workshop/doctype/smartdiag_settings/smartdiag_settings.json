@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-12 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_webhook_url",
+  "event_webhook_secret",
+  "evidence_bucket",
+  "portal_base_url",
+  "quote_expiry_days",
+  "require_quality_check",
+  "enable_ai",
+  "assistant_mode"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_webhook_url",
+   "fieldtype": "Data",
+   "label": "Event Webhook URL"
+  },
+  {
+   "fieldname": "event_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Event Webhook Secret"
+  },
+  {
+   "fieldname": "evidence_bucket",
+   "fieldtype": "Data",
+   "label": "Evidence Bucket",
+   "default": "smartdiag-evidence"
+  },
+  {
+   "fieldname": "portal_base_url",
+   "fieldtype": "Data",
+   "label": "Portal Base URL"
+  },
+  {
+   "fieldname": "quote_expiry_days",
+   "fieldtype": "Int",
+   "label": "Quote Expiry Days",
+   "default": 7
+  },
+  {
+   "fieldname": "require_quality_check",
+   "fieldtype": "Check",
+   "label": "Require Quality Check",
+   "default": 1
+  },
+  {
+   "fieldname": "enable_ai",
+   "fieldtype": "Check",
+   "label": "Enable AI",
+   "default": 0
+  },
+  {
+   "fieldname": "assistant_mode",
+   "fieldtype": "Select",
+   "label": "Assistant Mode",
+   "options": "DEMO\nLOCAL\nEXTERNAL",
+   "default": "DEMO"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SmartDiag Workshop",
+ "name": "SmartDiag Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "issingle": 1
+}

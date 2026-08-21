@@ -1,0 +1,33 @@
+services:
+  etcd-witness:
+    image: quay.io/coreos/etcd:v3.5.21
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - /usr/local/bin/etcd
+      - --name=smartdiag-witness
+      - --data-dir=/etcd-data
+      - --listen-peer-urls=http://${WITNESS_PRIVATE_IP}:2380
+      - --initial-advertise-peer-urls=http://${WITNESS_PRIVATE_IP}:2380
+      - --listen-client-urls=http://${WITNESS_PRIVATE_IP}:2379,http://127.0.0.1:2379
+      - --advertise-client-urls=http://${WITNESS_PRIVATE_IP}:2379
+      - --initial-cluster=smartdiag-a=${ETCD_A},smartdiag-b=${ETCD_B},smartdiag-witness=${ETCD_WITNESS}
+      - --initial-cluster-token=${ETCD_CLUSTER_TOKEN}
+      - --initial-cluster-state=new
+    volumes:
+      - witness-etcd-data:/etcd-data
+
+  galera-arbitrator:
+    build:
+      context: ../../../..
+      dockerfile: infra/ha/two-node/witness/Dockerfile.garbd
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - --address=gcomm://${GALERA_NODE_A},${GALERA_NODE_B}
+      - --group=${GALERA_CLUSTER_NAME}
+      - --name=smartdiag-garbd
+      - --log=/dev/stdout
+
+volumes:
+  witness-etcd-data:

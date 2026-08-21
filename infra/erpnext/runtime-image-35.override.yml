@@ -1,0 +1,15 @@
+services:
+  backend:
+    image: smartdiag504-erpnext-workshop:35
+  frontend:
+    image: smartdiag504-erpnext-workshop:35
+  websocket:
+    image: smartdiag504-erpnext-workshop:35
+  queue-long:
+    image: smartdiag504-erpnext-workshop:35
+  queue-short:
+    image: smartdiag504-erpnext-workshop:35
+  scheduler:
+    image: smartdiag504-erpnext-workshop:35
+  configurator:
+    image: smartdiag504-erpnext-workshop:35

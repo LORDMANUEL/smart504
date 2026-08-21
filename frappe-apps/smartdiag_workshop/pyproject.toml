@@ -1,0 +1,23 @@
+[project]
+name = "smartdiag-workshop"
+version = "0.4.0"
+description = "Automotive workshop domain extension for ERPNext and Beveren FSM"
+authors = [{name = "SmartDiag504"}]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+dependencies = ["smartdiag-domain>=0.1.0"]
+dynamic = []
+
+[build-system]
+requires = ["flit_core>=3.9,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=16.0.0,<17.0.0"
+erpnext = ">=16.0.0,<17.0.0"
+beveren_fsm = ">=0.0.1"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"

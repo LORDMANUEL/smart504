@@ -1,0 +1,46 @@
+version: 1
+schema:
+  required: [event_id, event_key, event_type, aggregate_type, aggregate_id, occurred_at, payload]
+  properties:
+    event_id: {type: string, format: uuid}
+    event_key: {type: string, minLength: 64, maxLength: 64}
+    event_type: {type: string, pattern: '^[A-Z][A-Z0-9_]+$'}
+    aggregate_type: {type: string}
+    aggregate_id: {type: string}
+    actor_id: {type: [string, 'null']}
+    occurred_at: {type: string, format: date-time}
+    payload: {type: object}
+events:
+  - WORK_ORDER_CREATED
+  - WORK_ORDER_STATUS_CHANGED
+  - WORK_ORDER_SUBMITTED
+  - WORK_ORDER_CANCELLED
+  - WORK_ORDER_SNAPSHOT
+  - VEHICLE_CHECKED_IN
+  - DIAGNOSIS_RECORDED
+  - QUOTE_SENT
+  - QUOTE_STATUS_CHANGED
+  - QUOTE_APPROVED
+  - QUOTE_REJECTED
+  - QUOTE_SNAPSHOT
+  - PART_REQUEST_CREATED
+  - PART_REQUEST_FULFILLED
+  - PART_REQUEST_SNAPSHOT
+  - PART_MOVEMENT_POSTED
+  - TECHNICIAN_ASSIGNED
+  - TECHNICIAN_SNAPSHOT
+  - WORK_STARTED
+  - WORK_PAUSED
+  - QUALITY_CHECK_PASSED
+  - QUALITY_CHECK_FAILED
+  - INVOICE_POSTED
+  - INVOICE_CANCELLED
+  - PAYMENT_RECEIVED
+  - VEHICLE_DELIVERED
+  - WARRANTY_CLAIM_OPENED
+  - CASH_CLOSING_RECORDED
+  - WEB_BOOKING_CREATED
+  - WEB_ORDER_REQUESTED
+  - WEB_ORDER_STATUS_CHANGED
+  - CHAT_SESSION_CREATED
+  - CHAT_SESSION_CLOSED

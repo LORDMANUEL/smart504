@@ -1,0 +1,32 @@
+services:
+  frontend:
+    networks:
+      default: {}
+      smartdiag_ingress:
+        aliases:
+          - smartdiag504-erp
+    labels:
+      caddy_0: https://erp.nexusmedi.org
+      caddy_0.encode: zstd gzip
+      caddy_0.reverse_proxy: "{{upstreams 8080}}"
+      caddy_ingress_network: eeylxzuvyicq5i5lelcrcda9
+      traefik.enable: "true"
+      traefik.docker.network: eeylxzuvyicq5i5lelcrcda9
+      traefik.http.middlewares.erp-gzip.compress: "true"
+      traefik.http.middlewares.erp-https.redirectscheme.scheme: https
+      traefik.http.routers.smartdiag-erp-http.entryPoints: http
+      traefik.http.routers.smartdiag-erp-http.middlewares: erp-https
+      traefik.http.routers.smartdiag-erp-http.rule: Host(`erp.nexusmedi.org`)
+      traefik.http.routers.smartdiag-erp-http.service: smartdiag-erp
+      traefik.http.routers.smartdiag-erp-https.entryPoints: https
+      traefik.http.routers.smartdiag-erp-https.middlewares: erp-gzip
+      traefik.http.routers.smartdiag-erp-https.rule: Host(`erp.nexusmedi.org`)
+      traefik.http.routers.smartdiag-erp-https.service: smartdiag-erp
+      traefik.http.routers.smartdiag-erp-https.tls: "true"
+      traefik.http.routers.smartdiag-erp-https.tls.certresolver: letsencrypt
+      traefik.http.services.smartdiag-erp.loadbalancer.server.port: "8080"
+
+networks:
+  smartdiag_ingress:
+    external: true
+    name: eeylxzuvyicq5i5lelcrcda9
