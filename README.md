@@ -83,6 +83,11 @@ sudo SMARTDIAG_BASE_DOMAIN=nexusmedi.org \
 Manual completo: `docs/deployment/INSTALACION_GRAFICA_LINUX.md`.
 Actualización y reversión: `docs/deployment/VERSIONADO_ACTUALIZACION_ROLLBACK.md`.
 
+Para mantenimiento automatizado y despliegues administrados sigue disponible
+`scripts/codex-vps-deploy.sh`; una instalación nueva debe comenzar con
+`install.sh`, que aplica la configuración guiada y llama a los componentes
+internos correspondientes.
+
 ## Chatbot
 
 El componente `ChatWidget` se carga en la landing page y llama únicamente a `/api/v1/chat/*`. No contiene claves de proveedor. El flujo es:
