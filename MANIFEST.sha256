@@ -512,7 +512,7 @@ ca5fd66852d71e44181163575755d2772bb5b9408d04989ceb852668fef1d304  ./scripts/inst
 5f093de3cdadd9f3381a1e1b80abd1d939dbfe6a0909861b0c0094b31644758e  ./scripts/install-gui.sh
 61ae5051295bcc89a0c45c1972670e6f76a7454c655cea65dc34271aa89523bf  ./scripts/install-vps.sh
 c6ad6a1de6427ce602abb211e61347619e25b8350db9010546add1f0e99bfdbf  ./scripts/lib/common.sh
-09c823f387bd30f049692c18bd0e07bf7ca0137e01671e7fd58004cd79220577  ./scripts/package-release.sh
+6548ff48cf6d709e8db5390303826e11faca6273fc0a28afd9017ff7c22b8ae0  ./scripts/package-release.sh
 0ee32842b4d87a71e20c7b8a7ecc775c20b1e8fa0a53886fafc45f321f8e42c3  ./scripts/qa_authenticated_axe.mjs
 ad93ae9b563e6e70bd7d10d286c9dae1b828902eac5458d435e3bf161e7ae9c7  ./scripts/report_erp_failures.sh
 22311a03706011c4c38ff583225f5cb894a53242151ee1cd55587537faf35cb9  ./scripts/restore.sh
