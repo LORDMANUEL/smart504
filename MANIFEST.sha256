@@ -1,6 +1,6 @@
 8a5a35263a79a7685675831feb0a54ffc3e55fef2b9de75ed6e60c7ac0ee4da9  ./.env.example
 f16ac2e3eee90f95cfd43e3455f9e9a39ec448f647c4402dfc18103123f2ccc6  ./.gitattributes
-84ba23951965e6888f76e9f244cdd91f9176e8963d749ed817ca7b312f24c86c  ./.github/workflows/build-images.yml
+b88e8e4126798ba6e122134a2aa0bcf0f944f37caccb1ec99fd81147b42edf3d  ./.github/workflows/build-images.yml
 d40b1d73b8219706775d7b1bb8ca34f7dd60677db283623952e0f43fa6b7991f  ./.github/workflows/ci.yml
 4821121c980e93e395e82f10863e37a614a265427918af5f5b65220c890208f8  ./.gitignore
 31df5709dd72178033381d7acd13832f0f605e8a8cfa4a7205b02ceb0923019e  ./AGENTS.md
@@ -102,10 +102,8 @@ b618689f5fb1a70f435086d217aa29685b08f142dce316e19949535c3139e351  ./apps/ops-web
 65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5  ./apps/ops-web/src/vite-env.d.ts
 efc49408bd3f380e556943a117a5737116c6a449aebe112d4f7e477f506e7fd0  ./apps/ops-web/styles.css
 a7266d1c85fa6947c70073256d9a73e4c459e97b0b4ef24b5c48dcab498ef4c5  ./apps/ops-web/tsconfig.app.json
-603c68e3848f891069159799e7dd64eedbb1452afd05554ff6484e67e75787ac  ./apps/ops-web/tsconfig.app.tsbuildinfo
 770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808  ./apps/ops-web/tsconfig.json
 3dc28b63563e20fab0d9f652f3039ed50e6c46bbdec66631a14822e8309b230d  ./apps/ops-web/tsconfig.node.json
-1a9b05db614d8e0437ba25089ea6eefff297d19fdb6fefc89d801bc63007b5ee  ./apps/ops-web/tsconfig.node.tsbuildinfo
 6fe581bdbd799784ceaa9977c6f725f80b6087122a368ad914124719c0be9cbf  ./apps/ops-web/vite.config.ts
 ff8ecaff6d1706e54868f64c8ff81c0c60d3dd5fbddbb8ffc2bf491fc90db0a0  ./apps/public-web/Dockerfile
 58276066ef3a4795079b6ec28120d7fde19a1a66ee37c119864370e8ef9eef23  ./apps/public-web/app.js
@@ -147,10 +145,8 @@ f565d81a79270a0c8cddfa7ff6decc9160e21ca0e41f60a0e473e1660bd6aa02  ./apps/public-
 65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5  ./apps/public-web/src/vite-env.d.ts
 ba81812e888d6933e3ad2d5326f9d2372a9fc1270a1196e901f51550e1e027a4  ./apps/public-web/styles.css
 a7266d1c85fa6947c70073256d9a73e4c459e97b0b4ef24b5c48dcab498ef4c5  ./apps/public-web/tsconfig.app.json
-f6eec9e82f333f415d8aaeca79091dbef3f2e7b297461f6d8e89f1213155b3a0  ./apps/public-web/tsconfig.app.tsbuildinfo
 770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808  ./apps/public-web/tsconfig.json
 3dc28b63563e20fab0d9f652f3039ed50e6c46bbdec66631a14822e8309b230d  ./apps/public-web/tsconfig.node.json
-77adc08321e05086676a4093cabb04c0cb8c12decb55643e6f8aa447e634b7d0  ./apps/public-web/tsconfig.node.tsbuildinfo
 424213fe15c75740926fe93db80c65fc55be7d1116263a55661b670b5139f9f2  ./apps/public-web/vite.config.ts
 1589a15e55fbebc6519c95d91d8f0a090618f20dc78e479858b9c27552484961  ./apps/signage/.eslintrc.json
 f37e7e1b90353a16ba7bec8979585311ee6d00311209391e5ab47162df4ca922  ./apps/signage/.gitignore
@@ -452,11 +448,6 @@ b210962c94d807a3fa7b40bd3587517644be2f7fbef618d6354b4ff4adccb9ce  ./packages/des
 1f90e7735fb7457b6fbede56aa936469544957134467889bf754b186487b4ce7  ./packages/sdk/package.json
 c5bb8926b2fe9f00e68b3e5a7164e3265ff3c9e58daa16a1c7f0566fbe4a72ec  ./packages/sdk/src/index.ts
 11a4d1da5a2b76f16948245a99b02069c7c1d60d73e86d462b1244159e193d24  ./packages/smartdiag_domain/pyproject.toml
-5c6c3b6c5fab018750f0ffc2b8fba759d6ed4af17708884572908551242d34ed  ./packages/smartdiag_domain/smartdiag_domain.egg-info/PKG-INFO
-e47b0a3f6c52bd1aa434ca644ec8b3c102dc37aa8a65163be229f495a47fadf3  ./packages/smartdiag_domain/smartdiag_domain.egg-info/SOURCES.txt
-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b  ./packages/smartdiag_domain/smartdiag_domain.egg-info/dependency_links.txt
-742a45114e7545e5f9b5bc5f695b7596db509dfda5a62ad76659452ecccbc3f5  ./packages/smartdiag_domain/smartdiag_domain.egg-info/requires.txt
-f121f9132ffb75ea01a1a39e67f403f321eca5d44af634980343034e92ee46fc  ./packages/smartdiag_domain/smartdiag_domain.egg-info/top_level.txt
 1c2e571968106d91d1b82f284bfd9e7364337ae114b03101794d65ff81f0474a  ./packages/smartdiag_domain/smartdiag_domain/__init__.py
 8dcc7ae78b23f111058ac62177e2cee910d57fdfdfaa409fa67f1021f8767d7f  ./packages/smartdiag_domain/smartdiag_domain/events.py
 ff099a2719edd05b940957c15c053bee31a2ff5d95b28d346d2b490bc8ff5707  ./packages/smartdiag_domain/smartdiag_domain/money.py
