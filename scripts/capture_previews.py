@@ -26,7 +26,10 @@ def launch_options() -> dict[str, object]:
 
 def load_app(page: Page, app_name: str) -> None:
     app_dir = ROOT / "apps" / app_name
-    html = (app_dir / "index.html").read_text(encoding="utf-8")
+    # The checked-in browser bundle is intentionally dependency-free. Its
+    # matching deterministic HTML lives with the browser fixtures; the Vite
+    # index only contains the React mount node and cannot host app.js directly.
+    html = (ROOT / "tests" / "fixtures" / f"{app_name}-browser.html").read_text(encoding="utf-8")
     mark = (ROOT / "packages" / "design-system" / "assets" / "smartdiag504-mark.svg").read_bytes()
     mark_uri = "data:image/svg+xml;base64," + base64.b64encode(mark).decode("ascii")
     html = html.replace("../../packages/design-system/assets/smartdiag504-mark.svg", mark_uri)
