@@ -86,7 +86,7 @@ Actualización y reversión: `docs/deployment/VERSIONADO_ACTUALIZACION_ROLLBACK.
 Para mantenimiento automatizado y despliegues administrados sigue disponible
 `scripts/codex-vps-deploy.sh`; una instalación nueva debe comenzar con
 `install.sh`, que aplica la configuración guiada y llama a los componentes
-internos correspondientes.
+internos correspondientes, incluido `scripts/install-vps.sh`.
 
 ## Chatbot
 
