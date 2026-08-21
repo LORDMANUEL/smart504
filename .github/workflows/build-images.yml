@@ -65,7 +65,7 @@ jobs:
           secret-files: |
             apps_json=./infra/frappe/apps.json
           tags: |
-            ghcr.io/${{ github.repository_owner }}/smartdiag504-${{ matrix.image }}:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/smartdiag504-${{ matrix.image }}:${{ github.ref_name }}
+            ghcr.io/lordmanuel/smartdiag504-${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/lordmanuel/smartdiag504-${{ matrix.image }}:${{ github.ref_name }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
