@@ -1,4 +1,4 @@
-name: smartdiag504-staging
+name: smartdiag504
 
 # Coolify staging profile. It deliberately has no host ports, custom networks,
 # Caddy, observability services, or image builds. Images must already exist in
@@ -6,7 +6,7 @@ name: smartdiag504-staging
 
 x-api-environment: &api-environment
   APP_VERSION: ${APP_IMAGE_TAG}
-  ENVIRONMENT: staging
+  ENVIRONMENT: ${ENVIRONMENT:-production}
   DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
   REDIS_URL: redis://:${REDIS_PASSWORD}@redis-platform:6379/0
   MEDIA_BACKEND: ${MEDIA_BACKEND:-filesystem}
@@ -21,14 +21,14 @@ x-api-environment: &api-environment
   EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
   CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
   AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
-  PUBLIC_CHAT_ENABLED: "false"
-  CORS_ORIGINS: https://taller.nexusmedi.org
+  PUBLIC_CHAT_ENABLED: ${PUBLIC_CHAT_ENABLED:-false}
+  CORS_ORIGINS: ${CORS_ORIGINS}
   FRAPPE_BASE_URL: http://frappe-frontend:8080
   FRAPPE_API_KEY: ${FRAPPE_API_KEY}
   FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
   FRAPPE_PRICE_LIST: ${FRAPPE_PRICE_LIST:-Standard Selling}
   INVOICE_VERIFICATION_MODE: strict
-  BUSINESS_NAME: SmartDiag504
+  BUSINESS_NAME: ${BUSINESS_NAME:-SmartDiag504}
   BUSINESS_PHONE: ${BUSINESS_PHONE}
   BUSINESS_WHATSAPP_URL: ${BUSINESS_WHATSAPP_URL}
   BUSINESS_ADDRESS: ${BUSINESS_ADDRESS}
@@ -218,7 +218,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       DB_HOST: mariadb
       DB_PORT: "3306"
-      ERP_EXTERNAL_URL: https://taller.nexusmedi.org/erp
+      ERP_EXTERNAL_URL: ${ERP_EXTERNAL_URL}
       FRAPPE_API_KEY: ${FRAPPE_API_KEY}
       FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
     volumes: *frappe-volumes
