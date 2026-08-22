@@ -36,6 +36,9 @@ jobs:
           - image: heartbeat-agent
             context: .
             dockerfile: services/heartbeat-agent/Dockerfile
+          - image: haproxy
+            context: .
+            dockerfile: infra/haproxy/Dockerfile
           - image: backup-runner
             context: .
             dockerfile: infra/backup/Dockerfile
