@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import frappe
+
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
@@ -78,4 +80,9 @@ def install_custom_fields() -> None:
     # migrate triggers Frappe Version formatting for legacy numeric defaults and
     # can abort an otherwise idempotent schema upgrade. New fields are still
     # created; intentional changes require an explicit patch migration.
-    create_custom_fields(CUSTOM_FIELDS, update=False)
+    available_custom_fields = {
+        doctype: fields
+        for doctype, fields in CUSTOM_FIELDS.items()
+        if frappe.db.exists("DocType", doctype)
+    }
+    create_custom_fields(available_custom_fields, update=False)
