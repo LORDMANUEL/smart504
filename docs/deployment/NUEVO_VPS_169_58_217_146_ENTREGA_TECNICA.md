@@ -112,4 +112,14 @@ Los volúmenes persistentes deben incluir PostgreSQL, MariaDB/Frappe, Valkey, Ga
 
 ## 9. Estado de entrega
 
-El núcleo está desplegado y sus healthchecks fueron validados. IA, S3 y antivirus requieren validación posterior al despliegue del Compose auxiliar. Correo y dominio permanecen pendientes de terceros. No declarar producción total mientras alguna de estas comprobaciones esté pendiente.
+El núcleo y el Compose auxiliar están desplegados. Se validó: API/ERP/web por
+HTTPS; S3 con escritura, lectura y eliminación; ClamAV con archivo seguro y
+rechazo EICAR; IA con generación Ollama y cinco fuentes RAG; login de propietario;
+vista previa y aplicación de catálogo a ERPNext. Fail2ban protege SSH con el
+jail `sshd` activo.
+
+Correo externo y dominio permanecen pendientes de terceros. El firewall del
+host requiere una política explícita para `DOCKER-USER`; activar UFW sin ella no
+protege los puertos publicados por Docker y puede afectar Coolify. No declarar
+correo productivo ni dominio definitivo mientras esas comprobaciones estén
+pendientes.
