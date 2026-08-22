@@ -319,6 +319,9 @@ def seed_work_orders() -> None:
                 customer_id=customer.id,
                 username="cliente.demo",
                 full_name=customer.full_name,
+                notification_email=client_email,
+                managed_email="cliente.demo@smartdiag504.com",
+                mailbox_status="PENDING_CONFIGURATION",
                 loyalty_enabled=True,
                 loyalty_points=245,
             ))

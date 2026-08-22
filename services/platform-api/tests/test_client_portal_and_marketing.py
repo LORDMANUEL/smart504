@@ -41,7 +41,10 @@ def _work_order_and_quote(client, admin_headers, db) -> tuple[dict, dict]:
     db.add(ClientUser(email="cliente@example.com", hashed_password=PasswordHelper().hash("cliente-demo-password"),
                       is_active=True, is_verified=True, is_superuser=False,
                       organization_id=customer.organization_id, customer_id=customer.id,
-                      username=f"cliente.{customer.id[:8]}", full_name=customer.full_name))
+                      username=f"cliente.{customer.id[:8]}", full_name=customer.full_name,
+                      notification_email="cliente@example.com",
+                      managed_email=f"cliente.{customer.id[:8]}@smartdiag504.com",
+                      mailbox_status="PENDING_CONFIGURATION"))
     db.commit()
     work_order = client.post(
         "/api/v1/operations/work-orders",

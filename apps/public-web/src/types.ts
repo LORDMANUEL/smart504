@@ -135,7 +135,7 @@ export type ClientQuote = {
   lines: Array<{ id: string; code: string; description: string; quantity: string; unit_price: string; line_total: string; approval_status: string }>;
 };
 export type ClientDashboard = {
-  profile: { full_name: string; email: string; username: string; mfa_enabled: boolean; loyalty_enabled: boolean; loyalty_points: number; credit_requested: boolean; credit_amount?: string | null; credit_status: string };
+  profile: { full_name: string; email: string; notification_email?: string; managed_email?: string | null; mailbox_status?: string; username: string; mfa_enabled: boolean; loyalty_enabled: boolean; loyalty_points: number; credit_requested: boolean; credit_amount?: string | null; credit_status: string };
   vehicles: ClientVehicle[];
   alerts: Array<{ id: string; kind: string; title: string; detail: string; status: string; quote_id?: string }>;
   notifications: Array<{ id: string; event: string; reference: string; title: string; message: string; channel: string; delivery_status: string; created_at: string }>;

@@ -56,6 +56,11 @@
 .client-login__form input, .client-portal select { border: 1px solid #d9dde5; border-radius: 8px; padding: 13px 14px; font: inherit; background: #fff; }
 .client-login__form small { color: #737985; text-align: center; }
 .form-error { color: #b00020 !important; font-weight: 700; }
+.form-success { color: #176b39 !important; font-weight: 700; }
+.client-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 12px; background: #f0f2f5; }
+.client-auth-tabs button { border: 0; border-radius: 9px; padding: 11px; background: transparent; font: inherit; font-weight: 800; cursor: pointer; }
+.client-auth-tabs button.active { background: #fff; color: #111318; box-shadow: 0 3px 14px rgba(17,19,24,.1); }
+.client-social-login { display: block; border: 1px solid #d9dde5; border-radius: 9px; padding: 12px; color: #111318 !important; text-align: center; font-weight: 800; text-decoration: none; }
 .client-portal { min-height: 100vh; display: grid; grid-template-columns: 252px 1fr; background: #f4f6f9; color: #13151a; }
 .client-portal > aside { position: sticky; top: 0; height: 100vh; padding: 24px 18px; background: #0a0b0d; display: flex; flex-direction: column; color: #fff; }
 .client-portal > aside .brand { max-width: 150px; margin: 0 8px 48px; }

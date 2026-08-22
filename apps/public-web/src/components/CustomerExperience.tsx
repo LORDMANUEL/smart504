@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, ArrowRight, Award, CalendarDays, CarFront, CheckCircle2, Clock3, CreditCard, Eye, FileCheck2, FileText, Gauge, History, KeyRound, LogOut, PackageSearch, Plus, Printer, Settings, ShieldCheck, ShoppingCart, Store, UserRound, Wrench, XCircle } from 'lucide-react';
 import { Brand } from './Brand';
-import { addClientVehicle, clientDocument, createClientAppointment, decideClientQuoteLine, getAppointmentSlots, getClientAppointments, getClientCompatibleParts, getClientDashboard, loginClient, logoutClient, updateClientProfile } from '../lib/api';
+import { addClientVehicle, clientDocument, createClientAppointment, decideClientQuoteLine, getAppointmentSlots, getClientAppointments, getClientCompatibleParts, getClientDashboard, getClientRegistrationOptions, loginClient, logoutClient, registerClient, updateClientProfile } from '../lib/api';
+import type { ClientRegistrationOptions } from '../lib/api';
 import type { AppointmentSlot, ClientAppointment, ClientDashboard, Product } from '../types';
 
 const money = (value: number) => new Intl.NumberFormat('es-HN', { style: 'currency', currency: 'HNL' }).format(value);
@@ -25,10 +26,17 @@ export function AccessHub() {
 }
 
 export function CustomerAccess() {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
+  const [options, setOptions] = useState<ClientRegistrationOptions | null>(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  useEffect(() => { void getClientRegistrationOptions().then(setOptions).catch(() => setOptions(null)); }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -47,15 +55,34 @@ export function CustomerAccess() {
     } finally { setLoading(false); }
   }
 
+  async function createAccount(event: React.FormEvent) {
+    event.preventDefault(); setError(''); setSuccess('');
+    if (fullName.trim().length < 3 || phone.trim().length < 8 || !email.includes('@') || password.length < 10) {
+      setError('Complete nombre, teléfono, correo válido y una contraseña de al menos diez caracteres.'); return;
+    }
+    setLoading(true);
+    try {
+      const created = await registerClient({ full_name: fullName, phone, email, password, username: username || undefined });
+      setSuccess(`${created.message} Usuario: ${created.username}. Correo reservado: ${created.managed_email}.`);
+      setMode('login');
+    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'No se pudo crear la cuenta.'); }
+    finally { setLoading(false); }
+  }
+
   return <main className="client-login">
     <section className="client-login__brand"><Brand /><h1>El historial de su carro, en un solo lugar.</h1><p>Repuestos compatibles, alertas, cotizaciones, facturas y promociones del taller.</p></section>
-    <form className="client-login__form" onSubmit={submit}>
-      <a href="/lading/acceso">← Volver a accesos</a><h2>Acceso de clientes</h2><p>Ingrese con las credenciales entregadas por el taller.</p>
+    <form className="client-login__form" onSubmit={mode === 'login' ? submit : createAccount}>
+      <a href="/lading/acceso">← Volver a accesos</a>
+      <div className="client-auth-tabs" role="tablist"><button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => { setMode('login'); setError(''); }}>Ingresar</button><button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => { setMode('register'); setError(''); }}>Crear cuenta</button></div>
+      <h2>{mode === 'login' ? 'Acceso de clientes' : 'Crear cuenta de cliente'}</h2><p>{mode === 'login' ? 'Ingrese con su correo personal y contraseña.' : 'Su correo personal se usará para recuperación y notificaciones.'}</p>
+      {mode === 'register' && <><label>Nombre completo<input required autoComplete="name" value={fullName} onChange={(event) => setFullName(event.target.value)} /></label><label>Teléfono<input required autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label><label>Usuario preferido <small>(opcional)</small><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Se genera automáticamente" /></label></>}
       <label>Correo electrónico<input aria-label="Correo electrónico" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-      <label>Contraseña<input aria-label="Contraseña" type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+      <label>Contraseña<input aria-label="Contraseña" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="button button--gold" disabled={loading}>{loading ? 'Validando…' : 'Ingresar a mi vehículo'}</button>
-      <small>¿Necesita acceso? Solicítelo al recibir o registrar su vehículo.</small>
+      {success && <p className="form-success" role="status">{success}</p>}
+      <button className="button button--gold" disabled={loading}>{loading ? 'Procesando…' : mode === 'login' ? 'Ingresar a mi vehículo' : 'Crear mi cuenta'}</button>
+      {mode === 'register' && <small>Se reservará un correo @{options?.managed_mail_domain ?? 'smartdiag504.com'}. El buzón se activa cuando el servicio de correo y el dominio estén configurados.</small>}
+      {options?.social_login.enabled && options.social_login.login_url && <a className="client-social-login" href={options.social_login.login_url}>Continuar con una red social mediante ERPNext</a>}
     </form>
   </main>;
 }

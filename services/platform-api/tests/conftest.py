@@ -93,7 +93,9 @@ def client_account(db):
     db.flush()
     db.add(ClientUser(email=email, hashed_password=PasswordHelper().hash(password), is_active=True,
                       is_verified=True, is_superuser=False, organization_id=customer.organization_id,
-                      customer_id=customer.id, username=f"cliente.{suffix}", full_name=customer.full_name))
+                      customer_id=customer.id, username=f"cliente.{suffix}", full_name=customer.full_name,
+                      notification_email=email, managed_email=f"cliente.{suffix}@smartdiag504.com",
+                      mailbox_status="PENDING_CONFIGURATION"))
     db.commit()
     return {"email": email, "password": password, "customer": customer, "vehicle": vehicle}
 

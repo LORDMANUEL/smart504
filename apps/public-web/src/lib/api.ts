@@ -82,6 +82,30 @@ export async function loginClient(email: string, password: string): Promise<void
   if (!response.ok) throw await parseError(response, 'No fue posible iniciar sesión');
 }
 
+export type ClientRegistrationOptions = {
+  self_registration: boolean;
+  managed_mail_domain: string;
+  managed_mailbox_enabled: boolean;
+  social_login: { enabled: boolean; configuration_source: string; login_url: string | null };
+};
+
+export async function getClientRegistrationOptions(): Promise<ClientRegistrationOptions> {
+  const response = await fetch(`${API_BASE}/api/v1/client-auth/registration-options`, { headers: { Accept: 'application/json' } });
+  if (!response.ok) throw await parseError(response, 'No se pudo consultar las opciones de acceso');
+  return response.json() as Promise<ClientRegistrationOptions>;
+}
+
+export async function registerClient(payload: {
+  full_name: string; phone: string; email: string; password: string; username?: string;
+}): Promise<{ username: string; notification_email: string; managed_email: string; mailbox_status: string; message: string }> {
+  const response = await fetch(`${API_BASE}/api/v1/client-auth/register`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ ...payload, website: '' }),
+  });
+  if (!response.ok) throw await parseError(response, 'No fue posible crear la cuenta');
+  return response.json();
+}
+
 export async function getClientSession(): Promise<boolean> {
   const response = await fetch(`${API_BASE}/api/v1/client-auth/session`, { credentials: 'include' });
   return response.ok;

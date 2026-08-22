@@ -39,7 +39,8 @@ class ClientProfileUpdate(BaseModel):
 
 def _profile(user: ClientUser) -> dict[str, object]:
     return {
-        "full_name": user.full_name, "email": user.email, "username": user.username,
+        "full_name": user.full_name, "email": user.email, "notification_email": user.notification_email,
+        "managed_email": user.managed_email, "mailbox_status": user.mailbox_status, "username": user.username,
         "mfa_enabled": user.mfa_enabled, "loyalty_enabled": user.loyalty_enabled,
         "loyalty_points": user.loyalty_points, "credit_requested": user.credit_requested,
         "credit_amount": f"{user.requested_credit_amount:.2f}" if user.requested_credit_amount is not None else None,
@@ -160,6 +161,7 @@ def update_profile(data: ClientProfileUpdate, client_user: ClientUser = Depends(
     customer.email = str(data.email)
     persisted_user.full_name = data.full_name
     persisted_user.email = str(data.email)
+    persisted_user.notification_email = persisted_user.email
     persisted_user.username = data.username
     persisted_user.credit_requested = data.credit_requested
     persisted_user.requested_credit_amount = data.credit_amount if data.credit_requested else None

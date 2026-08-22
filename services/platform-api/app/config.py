@@ -100,6 +100,10 @@ class Settings(BaseSettings):
     public_booking_limit_per_minute: int = Field(default=5, ge=1, le=100)
     public_order_limit_per_minute: int = Field(default=8, ge=1, le=100)
     public_lead_limit_per_minute: int = Field(default=5, ge=1, le=100)
+    public_client_registration_limit_per_minute: int = Field(default=3, ge=1, le=30)
+    managed_mail_domain: str = "smartdiag504.com"
+    managed_mailbox_enabled: bool = False
+    frappe_social_login_enabled: bool = False
     public_chat_session_limit_per_minute: int = Field(default=6, ge=1, le=100)
     public_chat_message_limit_per_minute: int = Field(default=12, ge=1, le=100)
     trusted_cdn_cidrs: Annotated[list[str], NoDecode] = Field(
