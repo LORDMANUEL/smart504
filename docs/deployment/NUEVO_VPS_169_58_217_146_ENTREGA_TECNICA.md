@@ -22,6 +22,11 @@ Inventario de secretos que debe custodiar el propietario:
 
 Nunca enviar estos valores por correo sin cifrar, WhatsApp, capturas o archivos Markdown.
 
+En el VPS de aceptación, las credenciales iniciales están en
+`/root/.config/smartdiag504/acceptance-owner.env`, con permisos `0600`. Sólo
+`root` puede leerlas. Deben cambiarse en el primer ingreso y eliminarse después
+de registrar al propietario definitivo en el gestor de contraseñas.
+
 ## 2. Arquitectura
 
 ### Núcleo transaccional
@@ -84,6 +89,10 @@ Ruta: Operaciones → Configuración → Catálogo por vehículo.
 6. Confirmar la importación; la API la envía a ERPNext.
 7. Abrir Catálogo, seleccionar el producto y cargar una imagen JPG, PNG o WebP.
 8. Confirmar precio, costo importado, margen mínimo y clasificación ABC/XYZ.
+
+Prueba de aceptación ejecutada el 2026-08-22: la plantilla produjo 5 manos de
+obra, 9 repuestos, cero errores y 24 relaciones de compatibilidad; la aplicación
+a ERPNext respondió `applied`.
 
 No se debe crear un artículo desde Mostrador. Mostrador únicamente selecciona existencias catalogadas y permite solicitar un artículo faltante para Compras.
 

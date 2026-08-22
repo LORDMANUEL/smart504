@@ -191,10 +191,45 @@ def _ensure_item_groups() -> None:
             ).insert(ignore_permissions=True)
 
 
+def _ensure_units_of_measure() -> None:
+    """Create the stable ERP codes used by imports, independent of UI language."""
+    for uom_name, whole_number in (
+        ("Hour", 0),
+        ("Nos", 1),
+        ("Unidad", 1),
+        ("Juego", 1),
+    ):
+        if not frappe.db.exists("UOM", uom_name):
+            frappe.get_doc(
+                {
+                    "doctype": "UOM",
+                    "uom_name": uom_name,
+                    "must_be_whole_number": whole_number,
+                    "enabled": 1,
+                }
+            ).insert(ignore_permissions=True)
+
+
+def _ensure_commercial_masters() -> None:
+    if not frappe.db.exists("Price List", "Standard Selling"):
+        frappe.get_doc(
+            {
+                "doctype": "Price List",
+                "price_list_name": "Standard Selling",
+                "enabled": 1,
+                "selling": 1,
+                "buying": 0,
+                "currency": "HNL",
+            }
+        ).insert(ignore_permissions=True)
+
+
 def after_install() -> None:
     _ensure_roles()
     _ensure_workshop_permissions()
     _ensure_item_groups()
+    _ensure_units_of_measure()
+    _ensure_commercial_masters()
     install_custom_fields()
     configure_smartdiag_site()
     frappe.db.commit()
@@ -204,5 +239,7 @@ def after_migrate() -> None:
     _ensure_roles()
     _ensure_workshop_permissions()
     _ensure_item_groups()
+    _ensure_units_of_measure()
+    _ensure_commercial_masters()
     install_custom_fields()
     configure_smartdiag_site()
