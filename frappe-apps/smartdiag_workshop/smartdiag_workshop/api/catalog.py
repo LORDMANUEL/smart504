@@ -48,9 +48,11 @@ def _upsert_item(entry: dict, *, is_service: bool) -> None:
     if frappe.db.exists("Item", code):
         item = frappe.get_doc("Item", code)
         item.update(values)
-        item.save()
+        item.save(ignore_permissions=True)
     else:
-        frappe.get_doc({"doctype": "Item", "item_code": code, **values}).insert()
+        frappe.get_doc({"doctype": "Item", "item_code": code, **values}).insert(
+            ignore_permissions=True
+        )
 
     price_name = frappe.db.get_value(
         "Item Price", {"item_code": code, "price_list": "Standard Selling", "currency": "HNL"}, "name"
@@ -59,11 +61,11 @@ def _upsert_item(entry: dict, *, is_service: bool) -> None:
     if price_name:
         price = frappe.get_doc("Item Price", price_name)
         price.update(price_values)
-        price.save()
+        price.save(ignore_permissions=True)
     else:
         frappe.get_doc(
             {"doctype": "Item Price", "item_code": code, "price_list": "Standard Selling", **price_values}
-        ).insert()
+        ).insert(ignore_permissions=True)
 
     if is_service:
         labor_values = {
@@ -76,9 +78,11 @@ def _upsert_item(entry: dict, *, is_service: bool) -> None:
         if frappe.db.exists("Labor Operation", code):
             labor = frappe.get_doc("Labor Operation", code)
             labor.update(labor_values)
-            labor.save()
+            labor.save(ignore_permissions=True)
         else:
-            frappe.get_doc({"doctype": "Labor Operation", "operation_code": code, **labor_values}).insert()
+            frappe.get_doc(
+                {"doctype": "Labor Operation", "operation_code": code, **labor_values}
+            ).insert(ignore_permissions=True)
 
 
 def _replace_fitments(entry: dict, catalog_type: str) -> None:
@@ -96,13 +100,15 @@ def _replace_fitments(entry: dict, catalog_type: str) -> None:
                 "engine": fitment.get("engine"),
                 "active": 1 if entry.get("active", True) else 0,
             }
-        ).insert()
+        ).insert(ignore_permissions=True)
 
 
 @frappe.whitelist()
 def import_workshop_catalog(catalog):
     """Apply a validated workbook payload to ERPNext in one transaction."""
-    frappe.only_for("System Manager")
+    allowed_roles = {"System Manager", "SmartDiag Integration API"}
+    if not allowed_roles.intersection(frappe.get_roles()):
+        frappe.throw("Not permitted", frappe.PermissionError)
     payload = frappe.parse_json(catalog) if isinstance(catalog, str) else catalog
     errors = payload.get("errors") or []
     if errors:
