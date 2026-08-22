@@ -169,7 +169,17 @@ def _ensure_workshop_permissions() -> None:
 
 
 def _ensure_item_groups() -> None:
-    for group_name, parent in (("Workshop Services", "All Item Groups"), ("Workshop Parts", "All Item Groups")):
+    root_group = "All Item Groups"
+    if not frappe.db.exists("Item Group", root_group):
+        frappe.get_doc(
+            {
+                "doctype": "Item Group",
+                "item_group_name": root_group,
+                "is_group": 1,
+            }
+        ).insert(ignore_permissions=True)
+
+    for group_name, parent in (("Workshop Services", root_group), ("Workshop Parts", root_group)):
         if not frappe.db.exists("Item Group", group_name):
             frappe.get_doc(
                 {
@@ -193,5 +203,6 @@ def after_install() -> None:
 def after_migrate() -> None:
     _ensure_roles()
     _ensure_workshop_permissions()
+    _ensure_item_groups()
     install_custom_fields()
     configure_smartdiag_site()
