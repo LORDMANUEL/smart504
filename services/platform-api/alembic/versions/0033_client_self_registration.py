@@ -1,14 +1,14 @@
 """Client self-registration and managed mailbox identity.
 
 Revision ID: 0033_client_self_registration
-Revises: 0032_payroll_separation_of_duties
+Revises: 0032_payroll_sod
 """
 
 from alembic import op
 import sqlalchemy as sa
 
 revision = "0033_client_self_registration"
-down_revision = "0032_payroll_separation_of_duties"
+down_revision = "0032_payroll_sod"
 branch_labels = None
 depends_on = None
 
