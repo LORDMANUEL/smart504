@@ -50,8 +50,8 @@ services:
       - sh
       - -c
       - >-
-        cp /usr/local/etc/haproxy/haproxy.cfg /tmp/haproxy.cfg;
-        printf '\n' >> /tmp/haproxy.cfg;
+        rm -f /tmp/haproxy.cfg;
+        awk '1' /usr/local/etc/haproxy/haproxy.cfg > /tmp/haproxy.cfg;
         exec haproxy -f /tmp/haproxy.cfg
     expose: ["8080", "8081", "8082", "8084", "8085"]
     configs:
@@ -227,8 +227,7 @@ services:
     command:
       - >-
         if [[ -f "sites/$${ERP_SITE_NAME}/site_config.json" ]]; then
-          bench --site "$${ERP_SITE_NAME}" execute frappe.model.document.unlock_document
-          --kwargs '{"doctype":"Module Profile","name":"Field Service Management"}' || true;
+          bench --site "$${ERP_SITE_NAME}" execute frappe.model.document.unlock_document --kwargs '{"doctype":"Module Profile","name":"Field Service Management"}' || true;
         fi;
         exec /usr/local/bin/bootstrap-site.sh
     environment:
