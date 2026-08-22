@@ -223,7 +223,14 @@ services:
     <<: *frappe-image
     restart: "no"
     exclude_from_hc: true
-    entrypoint: ["/usr/local/bin/bootstrap-site.sh"]
+    entrypoint: ["bash", "-lc"]
+    command:
+      - >-
+        if [[ -f "sites/$${ERP_SITE_NAME}/site_config.json" ]]; then
+          bench --site "$${ERP_SITE_NAME}" execute frappe.model.document.unlock_document
+          --kwargs '{"doctype":"Module Profile","name":"Field Service Management"}' || true;
+        fi;
+        exec /usr/local/bin/bootstrap-site.sh
     environment:
       ERP_SITE_NAME: ${ERP_SITE_NAME}
       ERP_ADMIN_PASSWORD: ${ERP_ADMIN_PASSWORD}
