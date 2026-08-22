@@ -46,10 +46,12 @@ done
 # repeatable on Frappe v16 migrations: Module Profile.on_update queues a worker
 # and locks the document before workers are allowed to start. SmartDiag owns its
 # production module profile, so prevent the legacy fixture from being replayed.
-beveren_module_profile_fixture="apps/beveren_fsm/beveren_fsm/fixtures/module_profile.json"
-if [[ -f "${beveren_module_profile_fixture}" ]]; then
-  mv "${beveren_module_profile_fixture}" "${beveren_module_profile_fixture}.installed"
-fi
+for beveren_one_time_fixture in module_profile role_profile; do
+  fixture_path="apps/beveren_fsm/beveren_fsm/fixtures/${beveren_one_time_fixture}.json"
+  if [[ -f "${fixture_path}" ]]; then
+    mv "${fixture_path}" "${fixture_path}.installed"
+  fi
+done
 
 for module_profile in "Field Service Management" "SmartDiag504 Taller"; do
   unlock_kwargs=$(python - "${module_profile}" <<'PY'
@@ -62,6 +64,10 @@ PY
   bench --site "${ERP_SITE_NAME}" execute frappe.model.document.unlock_document \
     --kwargs "${unlock_kwargs}" || true
 done
+
+unlock_kwargs='{"doctype":"Role Profile","name":"Service Manager"}'
+bench --site "${ERP_SITE_NAME}" execute frappe.model.document.unlock_document \
+  --kwargs "${unlock_kwargs}" || true
 
 bench --site "${ERP_SITE_NAME}" migrate
 
