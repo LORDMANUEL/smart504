@@ -51,7 +51,7 @@ x-frappe-image: &frappe-image
 
 services:
   haproxy:
-    image: ${HAPROXY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-haproxy:main}
+    image: ${HAPROXY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-haproxy:main@sha256:b855a63dcf97ba761b133f76b6796ad3e4f45ea2bc6eefb0e1b7fd2744a93870}
     restart: unless-stopped
     expose: ["8080", "8081", "8082", "8083", "8084", "8085"]
     security_opt: ["no-new-privileges:true"]
