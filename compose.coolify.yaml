@@ -23,7 +23,10 @@ x-api-environment: &api-environment
   AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
   PUBLIC_CHAT_ENABLED: ${PUBLIC_CHAT_ENABLED:-false}
   CORS_ORIGINS: ${CORS_ORIGINS}
-  FRAPPE_BASE_URL: http://frappe-frontend:8080
+  # Use the routed site URL so Frappe receives the correct tenant hostname.
+  # An internal request without that Host header resolves to Frappe's default
+  # site and returns 404 even when the requested ERP site is healthy.
+  FRAPPE_BASE_URL: ${FRAPPE_BASE_URL:-https://erp.169.58.217.146.sslip.io}
   FRAPPE_API_KEY: ${FRAPPE_API_KEY}
   FRAPPE_API_SECRET: ${FRAPPE_API_SECRET}
   FRAPPE_PRICE_LIST: ${FRAPPE_PRICE_LIST:-Standard Selling}
