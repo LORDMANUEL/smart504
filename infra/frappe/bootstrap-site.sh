@@ -42,6 +42,27 @@ for app in erpnext beveren_fsm smartdiag_workshop; do
   fi
 done
 
+# Beveren ships a Module Profile fixture that is safe during install but is not
+# repeatable on Frappe v16 migrations: Module Profile.on_update queues a worker
+# and locks the document before workers are allowed to start. SmartDiag owns its
+# production module profile, so prevent the legacy fixture from being replayed.
+beveren_module_profile_fixture="apps/beveren_fsm/beveren_fsm/fixtures/module_profile.json"
+if [[ -f "${beveren_module_profile_fixture}" ]]; then
+  mv "${beveren_module_profile_fixture}" "${beveren_module_profile_fixture}.installed"
+fi
+
+for module_profile in "Field Service Management" "SmartDiag504 Taller"; do
+  unlock_kwargs=$(python - "${module_profile}" <<'PY'
+import json
+import sys
+
+print(json.dumps({"doctype": "Module Profile", "name": sys.argv[1]}))
+PY
+)
+  bench --site "${ERP_SITE_NAME}" execute frappe.model.document.unlock_document \
+    --kwargs "${unlock_kwargs}" || true
+done
+
 bench --site "${ERP_SITE_NAME}" migrate
 
 if [[ -n "${FRAPPE_API_KEY:-}" && -n "${FRAPPE_API_SECRET:-}" ]]; then
