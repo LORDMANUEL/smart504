@@ -38,3 +38,19 @@ Antes de habilitarlo se debe configurar en ERPNext cada proveedor, su URI de ret
 4. Iniciar sesión con el correo personal y confirmar que `/api/v1/client-auth/session` devuelve la identidad creada.
 5. Confirmar que existe `CLIENT_ACCOUNT_CREATED` en el mapa de flujos y una entrega `CLIENT_ACCOUNT_CREATED` en la cola de notificaciones.
 6. Confirmar que los botones sociales permanecen ocultos si ERPNext no tiene OAuth habilitado.
+
+## Evidencia VPS de pruebas — 2026-08-22
+
+- Despliegue Coolify: `yiwhnz0e8w9d22oxgtcf3shb`, estado `finished`.
+- Imagen API servida: digest `sha256:75619527c06e202f673826c87cadca38681244f62b20ef1a8f6024c6ffc8120d`.
+- Esquema PostgreSQL: `0033_client_self_registration (head)`.
+- Salud integral: `/ready` respondió HTTP 200.
+- Opciones de registro: autorregistro activo; buzón administrado y login social desactivados hasta configurar sus proveedores.
+- Alta nueva: HTTP 201; usuario y dirección corporativa únicos; estado `PENDING_CONFIGURATION`.
+- Correo duplicado: HTTP 409.
+- Inicio de sesión con el correo personal: HTTP 204; lectura de sesión: HTTP 200.
+- Auditoría: último evento `CLIENT_ACCOUNT_CREATED|SUCCESS`.
+- Notificación: entrega `CLIENT_ACCOUNT_CREATED|PENDING`, pendiente de SMTP definitivo.
+- Interfaz pública: el bundle servido contiene **Crear cuenta de cliente**.
+
+Los datos de aceptación son desechables y no constituyen credenciales de entrega. No se registran contraseñas en este documento.
