@@ -1,6 +1,6 @@
 name: smartdiag504
 
-# Coolify staging profile. It deliberately has no host ports, custom networks,
+# Coolify production profile. It deliberately has no host ports, custom networks,
 # Caddy, observability services, or image builds. Images must already exist in
 # the private registry and be pinned by immutable digest in Coolify.
 
@@ -46,6 +46,13 @@ services:
   haproxy:
     image: haproxy:3.0-alpine
     restart: unless-stopped
+    command:
+      - sh
+      - -c
+      - >-
+        cp /usr/local/etc/haproxy/haproxy.cfg /tmp/haproxy.cfg;
+        printf '\n' >> /tmp/haproxy.cfg;
+        exec haproxy -f /tmp/haproxy.cfg
     expose: ["8080", "8081", "8082", "8084", "8085"]
     configs:
       - source: smartdiag-haproxy
