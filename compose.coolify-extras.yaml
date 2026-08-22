@@ -1,0 +1,190 @@
+name: smartdiag504-extras
+
+# Auxiliary production services are isolated from the transactional core so
+# they can be upgraded without recreating ERPNext, PostgreSQL or the web tier.
+# CORE_NETWORK is the private Docker network of the core Coolify application.
+
+services:
+  chromadb:
+    image: chromadb/chroma:1.5.9@sha256:abcce7c335e2dab9f11ef629296f7309b09cb19ae4b34da32ac7e34ff5773140
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /chroma/chroma
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes: ["chroma-data:/chroma/chroma"]
+    networks: [core]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+
+  ollama:
+    image: ollama/ollama:0.32.5@sha256:98c19ced6600f2924e80b92d701cd867d8f7ef0c4dde516c619484e31e47f103
+    restart: unless-stopped
+    volumes: ["ollama-data:/root/.ollama"]
+    networks: [core]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 20s
+      timeout: 8s
+      retries: 20
+      start_period: 30s
+
+  ollama-model-init:
+    image: curlimages/curl:8.14.1
+    restart: "no"
+    exclude_from_hc: true
+    environment: {OLLAMA_MODEL: "${LLM_MODEL:-gemma3:270m}"}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        curl -fsS http://ollama:11434/api/pull
+        -d "{\"name\":\"$${OLLAMA_MODEL}\",\"stream\":false}"
+    networks: [core]
+    depends_on:
+      ollama: {condition: service_healthy}
+
+  ai-gateway-a:
+    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    restart: unless-stopped
+    environment: &ai-environment
+      HOME: /tmp
+      ENVIRONMENT: production
+      AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
+      LLM_PROVIDER: ollama
+      LLM_BASE_URL: http://ollama:11434/v1
+      LLM_MODEL: ${LLM_MODEL:-gemma3:270m}
+      CHROMA_URL: http://chromadb:8000
+      CHROMA_ENABLED: "true"
+      CHROMA_COLLECTION: smartdiag_knowledge
+    networks:
+      core:
+        aliases: [ai-gateway]
+    depends_on:
+      chromadb: {condition: service_healthy}
+      ollama-model-init: {condition: service_completed_successfully}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    healthcheck: &ai-health
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/ready"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+      start_period: 30s
+
+  ai-gateway-b:
+    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    restart: unless-stopped
+    environment: *ai-environment
+    networks:
+      core:
+        aliases: [ai-gateway]
+    depends_on:
+      chromadb: {condition: service_healthy}
+      ollama-model-init: {condition: service_completed_successfully}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    healthcheck: *ai-health
+
+  rag-seed:
+    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    restart: "no"
+    exclude_from_hc: true
+    environment:
+      HOME: /tmp
+      CHROMA_URL: http://chromadb:8000
+      CHROMA_COLLECTION: smartdiag_knowledge
+    command: ["python", "-m", "smartdiag_ai_gateway.rag_seed"]
+    networks: [core]
+    depends_on:
+      chromadb: {condition: service_healthy}
+
+  garage-configurator:
+    image: alpine:3.22
+    restart: "no"
+    exclude_from_hc: true
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
+      GARAGE_METRICS_TOKEN: ${GARAGE_METRICS_TOKEN}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        umask 077
+        mkdir -p /config
+        cat > /config/garage.toml <<EOF
+        metadata_dir = "/var/lib/garage/meta"
+        data_dir = "/var/lib/garage/data"
+        db_engine = "sqlite"
+        replication_factor = 1
+        rpc_bind_addr = "[::]:3901"
+        rpc_public_addr = "garage:3901"
+        rpc_secret = "$${GARAGE_RPC_SECRET}"
+        [s3_api]
+        s3_region = "garage"
+        api_bind_addr = "[::]:3900"
+        root_domain = ".s3.garage.local"
+        [admin]
+        api_bind_addr = "[::]:3903"
+        admin_token = "$${GARAGE_ADMIN_TOKEN}"
+        metrics_token = "$${GARAGE_METRICS_TOKEN}"
+        EOF
+        chmod 600 /config/garage.toml
+    volumes: ["garage-config:/config"]
+    networks: [core]
+
+  garage:
+    image: dxflrs/garage:v2.3.0@sha256:dac0c92add4f1a0b41035e94b41036a270ffbe88a37c7ac9c3f19e6dc5bdccf2
+    restart: unless-stopped
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
+      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY_ID}
+      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_ACCESS_KEY}
+      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-smartdiag-evidence}
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    volumes:
+      - garage-config:/etc/garage:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    networks: [core]
+    depends_on:
+      garage-configurator: {condition: service_completed_successfully}
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+      start_period: 20s
+
+  clamav:
+    image: clamav/clamav:stable@sha256:6e348a93ef3be6a52e90819062313a2ef35c260708121d4465e67b949ae4e616
+    restart: unless-stopped
+    volumes: ["clamav-data:/var/lib/clamav"]
+    networks: [core]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+
+volumes:
+  chroma-data:
+  ollama-data:
+  garage-config:
+  garage-meta:
+  garage-data:
+  clamav-data:
+
+networks:
+  core:
+    external: true
+    name: ${CORE_NETWORK}

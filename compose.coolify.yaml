@@ -17,10 +17,6 @@ x-api-environment: &api-environment
   S3_REGION: ${S3_REGION:-us-east-1}
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
-  PRIVATE_EVIDENCE_BACKEND: ${PRIVATE_EVIDENCE_BACKEND:-filesystem}
-  MALWARE_SCANNER_HOST: ${MALWARE_SCANNER_HOST:-clamav}
-  MALWARE_SCANNER_PORT: ${MALWARE_SCANNER_PORT:-3310}
-  MALWARE_SCANNER_REQUIRED: ${MALWARE_SCANNER_REQUIRED:-true}
   ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
   EVENT_HMAC_SECRET: ${EVENT_HMAC_SECRET}
   CHAT_SESSION_SECRET: ${CHAT_SESSION_SECRET}
@@ -51,9 +47,19 @@ x-frappe-image: &frappe-image
 
 services:
   haproxy:
-    image: ${HAPROXY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-haproxy:main@sha256:b855a63dcf97ba761b133f76b6796ad3e4f45ea2bc6eefb0e1b7fd2744a93870}
+    image: haproxy:3.0-alpine
     restart: unless-stopped
-    expose: ["8080", "8081", "8082", "8083", "8084", "8085"]
+    command:
+      - sh
+      - -c
+      - >-
+        rm -f /tmp/haproxy.cfg;
+        awk '1' /usr/local/etc/haproxy/haproxy.cfg > /tmp/haproxy.cfg;
+        exec haproxy -f /tmp/haproxy.cfg
+    expose: ["8080", "8081", "8082", "8084", "8085"]
+    configs:
+      - source: smartdiag-haproxy
+        target: /usr/local/etc/haproxy/haproxy.cfg
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     healthcheck:
@@ -121,8 +127,6 @@ services:
     depends_on:
       platform-migrate: {condition: service_completed_successfully}
       frappe-frontend: {condition: service_healthy}
-      garage: {condition: service_healthy}
-      clamav: {condition: service_healthy}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     healthcheck: &api-health
@@ -143,8 +147,6 @@ services:
     depends_on:
       platform-migrate: {condition: service_completed_successfully}
       frappe-frontend: {condition: service_healthy}
-      garage: {condition: service_healthy}
-      clamav: {condition: service_healthy}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     healthcheck: *api-health
@@ -172,167 +174,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-  chromadb:
-    image: chromadb/chroma:1.5.9@sha256:abcce7c335e2dab9f11ef629296f7309b09cb19ae4b34da32ac7e34ff5773140
-    restart: unless-stopped
-    environment:
-      IS_PERSISTENT: "TRUE"
-      PERSIST_DIRECTORY: /chroma/chroma
-      ANONYMIZED_TELEMETRY: "FALSE"
-    volumes: ["chroma-data:/chroma/chroma"]
-    security_opt: ["no-new-privileges:true"]
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/8000'"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-      start_period: 15s
-
-  ollama:
-    image: ollama/ollama:0.32.5@sha256:98c19ced6600f2924e80b92d701cd867d8f7ef0c4dde516c619484e31e47f103
-    restart: unless-stopped
-    volumes: ["ollama-data:/root/.ollama"]
-    security_opt: ["no-new-privileges:true"]
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 20s
-      timeout: 8s
-      retries: 20
-      start_period: 30s
-
-  ollama-model-init:
-    image: curlimages/curl:8.14.1
-    restart: "no"
-    exclude_from_hc: true
-    environment: {OLLAMA_MODEL: "${LLM_MODEL:-gemma3:270m}"}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        curl -fsS http://ollama:11434/api/pull
-        -d "{\"name\":\"$${OLLAMA_MODEL}\",\"stream\":false}"
-    depends_on:
-      ollama: {condition: service_healthy}
-
-  ai-gateway-a:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
-    restart: unless-stopped
-    expose: ["8000"]
-    environment: &ai-environment
-      HOME: /tmp
-      ENVIRONMENT: production
-      AI_GATEWAY_INTERNAL_TOKEN: ${AI_GATEWAY_INTERNAL_TOKEN}
-      LLM_PROVIDER: ollama
-      LLM_BASE_URL: http://ollama:11434/v1
-      LLM_MODEL: ${LLM_MODEL:-gemma3:270m}
-      CHROMA_URL: http://chromadb:8000
-      CHROMA_ENABLED: "true"
-      CHROMA_COLLECTION: smartdiag_knowledge
-    depends_on:
-      chromadb: {condition: service_healthy}
-      ollama-model-init: {condition: service_completed_successfully}
-    security_opt: ["no-new-privileges:true"]
-    cap_drop: ["ALL"]
-    healthcheck: &ai-health
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/ready"]
-      interval: 15s
-      timeout: 8s
-      retries: 12
-      start_period: 30s
-
-  ai-gateway-b:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
-    restart: unless-stopped
-    expose: ["8000"]
-    environment: *ai-environment
-    depends_on:
-      chromadb: {condition: service_healthy}
-      ollama-model-init: {condition: service_completed_successfully}
-    security_opt: ["no-new-privileges:true"]
-    cap_drop: ["ALL"]
-    healthcheck: *ai-health
-
-  rag-seed:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
-    restart: "no"
-    exclude_from_hc: true
-    environment:
-      HOME: /tmp
-      CHROMA_URL: http://chromadb:8000
-      CHROMA_COLLECTION: smartdiag_knowledge
-    command: ["python", "-m", "smartdiag_ai_gateway.rag_seed"]
-    depends_on:
-      chromadb: {condition: service_healthy}
-
-  garage-configurator:
-    image: alpine:3.22
-    restart: "no"
-    exclude_from_hc: true
-    environment:
-      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
-      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
-      GARAGE_METRICS_TOKEN: ${GARAGE_METRICS_TOKEN}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        set -eu
-        umask 077
-        mkdir -p /config
-        cat > /config/garage.toml <<EOF
-        metadata_dir = "/var/lib/garage/meta"
-        data_dir = "/var/lib/garage/data"
-        db_engine = "sqlite"
-        replication_factor = 1
-        rpc_bind_addr = "[::]:3901"
-        rpc_public_addr = "garage:3901"
-        rpc_secret = "$${GARAGE_RPC_SECRET}"
-        [s3_api]
-        s3_region = "garage"
-        api_bind_addr = "[::]:3900"
-        root_domain = ".s3.garage.local"
-        [admin]
-        api_bind_addr = "[::]:3903"
-        admin_token = "$${GARAGE_ADMIN_TOKEN}"
-        metrics_token = "$${GARAGE_METRICS_TOKEN}"
-        EOF
-        chmod 600 /config/garage.toml
-    volumes: ["garage-config:/config"]
-
-  garage:
-    image: dxflrs/garage:v2.3.0@sha256:dac0c92add4f1a0b41035e94b41036a270ffbe88a37c7ac9c3f19e6dc5bdccf2
-    restart: unless-stopped
-    environment:
-      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
-      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY_ID}
-      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_ACCESS_KEY}
-      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-smartdiag-evidence}
-    command: ["/garage", "server", "--single-node", "--default-bucket"]
-    volumes:
-      - garage-config:/etc/garage:ro
-      - garage-meta:/var/lib/garage/meta
-      - garage-data:/var/lib/garage/data
-    depends_on:
-      garage-configurator: {condition: service_completed_successfully}
-    security_opt: ["no-new-privileges:true"]
-    healthcheck:
-      test: ["CMD", "/garage", "status"]
-      interval: 15s
-      timeout: 8s
-      retries: 12
-      start_period: 20s
-
-  clamav:
-    image: clamav/clamav:stable@sha256:6e348a93ef3be6a52e90819062313a2ef35c260708121d4465e67b949ae4e616
-    restart: unless-stopped
-    volumes: ["clamav-data:/var/lib/clamav"]
-    security_opt: ["no-new-privileges:true"]
-    healthcheck:
-      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
-      interval: 30s
-      timeout: 10s
-      retries: 20
-      start_period: 120s
-
   mariadb:
     image: mariadb:11.8
     restart: unless-stopped
@@ -485,9 +326,80 @@ volumes:
   redis-queue-data:
   frappe-sites:
   frappe-logs:
-  chroma-data:
-  ollama-data:
-  garage-config:
-  garage-meta:
-  garage-data:
-  clamav-data:
+
+configs:
+  smartdiag-haproxy:
+    content: |
+      global
+          log stdout format raw local0
+          maxconn 4096
+
+      resolvers docker
+          nameserver dns 127.0.0.11:53
+          resolve_retries 3
+          timeout resolve 1s
+          timeout retry 1s
+          hold valid 10s
+
+      defaults
+          log global
+          mode http
+          option httplog
+          option dontlognull
+          timeout connect 5s
+          timeout client 60s
+          timeout server 60s
+          timeout http-request 10s
+
+      frontend smartdiag_gateway
+          bind *:8084
+          acl is_api path_beg /api/ /media/
+          acl is_operations path_beg /tallerv1/
+          use_backend platform_api_nodes if is_api
+          use_backend ops_web_nodes if is_operations
+          default_backend public_web_nodes
+
+      frontend public_web
+          bind *:8080
+          default_backend public_web_nodes
+      backend public_web_nodes
+          balance roundrobin
+          option httpchk GET /healthz
+          http-check expect status 200
+          server public-a public-web-a:8080 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+          server public-b public-web-b:8080 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+
+      frontend ops_web
+          bind *:8081
+          default_backend ops_web_nodes
+      backend ops_web_nodes
+          balance roundrobin
+          option httpchk GET /healthz
+          http-check expect status 200
+          server ops-a ops-web-a:8080 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+          server ops-b ops-web-b:8080 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+
+      frontend platform_api
+          bind *:8082
+          default_backend platform_api_nodes
+      backend platform_api_nodes
+          balance roundrobin
+          option httpchk GET /ready
+          http-check expect status 200
+          server api-a platform-api-a:8000 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+          server api-b platform-api-b:8000 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+
+      frontend frappe_erp
+          bind *:8085
+          default_backend frappe_erp_node
+      backend frappe_erp_node
+          option httpchk GET /api/method/ping
+          http-check expect status 200
+          server frappe frappe-frontend:8080 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+
+      listen stats
+          bind 127.0.0.1:8404
+          stats enable
+          stats uri /stats
+          stats refresh 5s
+
