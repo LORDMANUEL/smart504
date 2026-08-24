@@ -39,6 +39,9 @@ describe('SmartDiag504 public site', () => {
     expect(screen.getAllByRole('link', { name: /comprar repuestos/i })[0]).toHaveAttribute('href', '/lading/repuestos');
     expect(await screen.findByText(/mes de la patria/i)).toBeInTheDocument();
     expect(await screen.findByRole('complementary', { name: /honduras, mes de la patria/i })).toHaveClass('seasonal-banner--patria_september');
+    expect(await screen.findByAltText(/bandera de honduras con cinco estrellas/i)).toHaveAttribute('src', '/images/seasonal/honduras-flag.webp');
+    expect(screen.getByAltText(/guacamaya roja/i)).toHaveAttribute('loading', 'lazy');
+    expect(document.head.querySelector('link[rel="preload"][href$="september-patria-hero.webp"]')).toBeInTheDocument();
   });
 
   it('filters catalog by search text', async () => {

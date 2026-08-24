@@ -82,12 +82,26 @@ function PublicLanding() {
   const seasonalTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code !== 'NONE' ? seasonalThemes[branding.seasonal_theme_code] : null;
   const isPatriaTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code === 'PATRIA_SEPTEMBER';
 
+  useEffect(() => {
+    if (!isPatriaTheme) return undefined;
+    const preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = 'image';
+    preload.type = 'image/webp';
+    preload.href = '/images/seasonal/september-patria-hero.webp';
+    preload.fetchPriority = 'high';
+    document.head.appendChild(preload);
+    return () => preload.remove();
+  }, [isPatriaTheme]);
+
   return (
     <div className="site-shell">
       {seasonalTheme ? (
         <aside className={`seasonal-banner seasonal-banner--${branding.seasonal_theme_code.toLowerCase()}`} aria-label={`Tema especial: ${seasonalTheme.shortLabel}`}>
-          <div className="seasonal-banner__flag" aria-hidden="true"><i /><i /><i /></div>
-          <span className="seasonal-banner__symbol" aria-hidden="true">{seasonalTheme.symbol}</span>
+          <div className="seasonal-banner__flag" aria-hidden="true"><i /><i /><i /><span className="seasonal-banner__stars"><b /><b /><b /><b /><b /></span></div>
+          {isPatriaTheme
+            ? <img className="seasonal-banner__image" src="/images/seasonal/honduras-flag.webp" alt="" width="48" height="48" decoding="async" />
+            : <span className="seasonal-banner__symbol" aria-hidden="true">{seasonalTheme.symbol}</span>}
           <div className="seasonal-banner__copy">
             <strong>{branding.seasonal_theme_title || seasonalTheme.title}</strong>
             <small>{branding.seasonal_theme_message || seasonalTheme.message}</small>
@@ -145,9 +159,9 @@ function PublicLanding() {
 
         <section className="assurance-strip" aria-label="Compromisos de servicio">
           <div className="container assurance-strip__grid">
-            <div><strong>Diagnóstico antes de reemplazar</strong><span>Pruebas y hallazgos registrados</span></div>
-            <div><strong>Aprobación antes de ejecutar</strong><span>Costos separados y comprensibles</span></div>
-            <div><strong>Historial que permanece</strong><span>Trabajo, repuestos y recomendaciones</span></div>
+            <div>{isPatriaTheme ? <img className="assurance-strip__seasonal" src="/images/seasonal/honduras-flag.webp" alt="Bandera de Honduras con cinco estrellas" width="72" height="72" loading="lazy" decoding="async" /> : null}<span><strong>Diagnóstico antes de reemplazar</strong><span>Pruebas y hallazgos registrados</span></span></div>
+            <div>{isPatriaTheme ? <img className="assurance-strip__seasonal" src="/images/seasonal/guacamaya.webp" alt="Guacamaya roja, ave nacional de Honduras" width="72" height="72" loading="lazy" decoding="async" /> : null}<span><strong>Aprobación antes de ejecutar</strong><span>Costos separados y comprensibles</span></span></div>
+            <div>{isPatriaTheme ? <img className="assurance-strip__seasonal" src="/images/seasonal/orquidea.webp" alt="Orquídea nacional de Honduras" width="72" height="72" loading="lazy" decoding="async" /> : null}<span><strong>Historial que permanece</strong><span>Trabajo, repuestos y recomendaciones</span></span></div>
           </div>
         </section>
 
