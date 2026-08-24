@@ -23,6 +23,11 @@
   --shadow: 0 20px 60px rgba(18, 18, 22, 0.12);
 }
 
+/* Keep the September identity consistent in every public surface. */
+html[data-seasonal-theme="PATRIA_SEPTEMBER"] body .brand__logo {
+  content: url('/brand/smartdiag504-logo-patria.webp');
+}
+
 /* Customer routes share the public brand but use a denser authenticated shell. */
 .button--client { background: #111216; color: #fff; margin-left: 8px; }
 .client-login { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, .85fr); background: #fff; }
