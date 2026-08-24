@@ -1,6 +1,17 @@
 import type { AppointmentSlot, BrandingProfile, ChatHistory, ChatReply, ChatSession, ClientAppointment, ClientDashboard, ClientVehicle, Product, ProductPage, StoreOrder, StoreOrderInput, VehicleFitment } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+function runtimeApiBase(): string {
+  const configured = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+  if (configured) return configured;
+  if (typeof window === 'undefined') return '';
+  const { protocol, hostname } = window.location;
+  if (/^(taller|clientes)\./i.test(hostname)) {
+    return `${protocol}//${hostname.replace(/^[^.]+\./, 'api.')}`;
+  }
+  return '';
+}
+
+const API_BASE = runtimeApiBase();
 
 export async function getBranding(): Promise<BrandingProfile> {
   const response = await fetch(`${API_BASE}/api/v1/branding`);
