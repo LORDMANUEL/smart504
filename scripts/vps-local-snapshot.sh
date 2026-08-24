@@ -24,13 +24,16 @@ docker exec "${postgres}" pg_dump -U "${pg_user}" -d "${pg_db}" -Fc > "${target}
 docker exec "${mariadb}" sh -lc 'mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --all-databases --single-transaction --routines --events' | gzip -9 > "${target}/erpnext-all.sql.gz"
 docker exec "${frappe}" tar -C /home/frappe/frappe-bench -czf - sites > "${target}/frappe-sites.tar.gz"
 
-garage_volume=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/var/lib/garage"}}{{.Name}}{{end}}{{end}}' "${garage}")
-[[ -n "${garage_volume}" ]]
-docker run --rm -v "${garage_volume}:/source:ro" alpine:3.22 tar -C /source -czf - . > "${target}/garage-data.tar.gz"
+for item in "config:/etc/garage" "meta:/var/lib/garage/meta" "data:/var/lib/garage/data"; do
+  label=${item%%:*}; destination=${item#*:}
+  volume=$(docker inspect -f "{{range .Mounts}}{{if eq .Destination \"${destination}\"}}{{.Name}}{{end}}{{end}}" "${garage}")
+  [[ -n "${volume}" ]]
+  docker run --rm -v "${volume}:/source:ro" alpine:3.22 tar -C /source -czf - . > "${target}/garage-${label}.tar.gz"
+done
 
-(cd "${target}" && sha256sum platform.pgdump erpnext-all.sql.gz frappe-sites.tar.gz garage-data.tar.gz > manifest.sha256)
+(cd "${target}" && sha256sum platform.pgdump erpnext-all.sql.gz frappe-sites.tar.gz garage-config.tar.gz garage-meta.tar.gz garage-data.tar.gz > manifest.sha256)
 (cd "${target}" && sha256sum -c manifest.sha256)
-gzip -t "${target}/erpnext-all.sql.gz" "${target}/frappe-sites.tar.gz" "${target}/garage-data.tar.gz"
+gzip -t "${target}/erpnext-all.sql.gz" "${target}/frappe-sites.tar.gz" "${target}/garage-config.tar.gz" "${target}/garage-meta.tar.gz" "${target}/garage-data.tar.gz"
 
 restore_db="smartdiag_restore_${stamp,,}"
 restore_db=${restore_db//[^a-z0-9_]/_}
