@@ -27,6 +27,10 @@ DEFAULT_BRANDING: dict[str, object] = {
     "logo_dark_url": "/brand/smartdiag504-logo.png",
     "favicon_url": "/brand/smartdiag504-logo.png",
     "document_footer": "Documento generado desde la trazabilidad registrada en SmartDiag504.",
+    "seasonal_theme_enabled": False,
+    "seasonal_theme_code": "NONE",
+    "seasonal_theme_title": "",
+    "seasonal_theme_message": "",
     "asset_history": [],
 }
 

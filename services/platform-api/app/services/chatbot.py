@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -263,7 +264,21 @@ def _is_prompt_attack(message: str) -> bool:
     )
 
 
-def fallback_answer(message: str, *, settings: Settings) -> ChatGatewayAnswer:
+def _known_customer_data(message: str, history: list[dict[str, str]] | None) -> dict[str, str]:
+    text = "\n".join([item.get("content", "") for item in (history or []) if item.get("role") == "user"] + [message])[-12000:]
+    facts: dict[str, str] = {}
+    patterns = {
+        "correo": r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
+        "teléfono": r"(?<!\d)(?:\+?504[ -]?)?[2389]\d{3}[ -]?\d{4}(?!\d)",
+        "vehículo": r"\b(?:Ford|Honda|Toyota|Hyundai|Kia|Nissan|Mazda|Chevrolet|Mitsubishi|Volkswagen|Jeep)\s+[A-Za-z0-9-]+(?:\s+(?:19\d{2}|20\d{2}))?\b",
+    }
+    for label, pattern in patterns.items():
+        match = re.search(pattern, text, re.I)
+        if match: facts[label] = " ".join(match.group(0).split())[:120]
+    return facts
+
+
+def fallback_answer(message: str, *, settings: Settings, history: list[dict[str, str]] | None = None) -> ChatGatewayAnswer:
     normalized = message.casefold()
     if _is_prompt_attack(message):
         answer = (
@@ -280,9 +295,16 @@ def fallback_answer(message: str, *, settings: Settings) -> ChatGatewayAnswer:
         )
         mode = "blocked"
     elif any(term in normalized for term in ("cita", "reserv", "agenda", "diagnóst", "diagnost")):
+        facts = _known_customer_data(message, history)
+        missing = [label for label in ("teléfono", "vehículo") if label not in facts]
+        detail = (
+            " Ya registré " + ", ".join(f"{key}: {value}" for key, value in facts.items()) + "."
+            if facts else ""
+        )
+        request = f" Sólo falta {', '.join(missing)}." if missing else " Continúe con fecha, horario y motivo."
         answer = (
-            "Puede reservar desde la sección «Reservar» de esta página. Indique nombre, teléfono, vehículo, "
-            "síntoma y fecha preferida; SmartDiag504 confirmará disponibilidad y alcance inicial."
+            "Puede reservar desde la sección «Reservar» de esta página."
+            f"{detail}{request} SmartDiag504 confirmará disponibilidad y alcance inicial."
         )
         mode = "fallback"
     elif any(
@@ -332,7 +354,7 @@ class HttpChatGateway:
         locale: str,
     ) -> ChatGatewayAnswer:
         if _is_prompt_attack(message):
-            return fallback_answer(message, settings=self.settings)
+            return fallback_answer(message, settings=self.settings, history=history)
         url = f"{self.settings.ai_gateway_url.rstrip('/')}/v1/public-chat"
         headers = {"X-AI-Gateway-Token": self.settings.ai_gateway_internal_token.get_secret_value()}
         payload = {
@@ -346,7 +368,7 @@ class HttpChatGateway:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.post(url, headers=headers, json=payload)
         except httpx.HTTPError:
-            return fallback_answer(message, settings=self.settings)
+            return fallback_answer(message, settings=self.settings, history=history)
 
         if response.status_code == status.HTTP_403_FORBIDDEN:
             return ChatGatewayAnswer(
@@ -361,7 +383,7 @@ class HttpChatGateway:
                 sources=[],
             )
         if response.status_code != status.HTTP_200_OK:
-            return fallback_answer(message, settings=self.settings)
+            return fallback_answer(message, settings=self.settings, history=history)
         try:
             data = response.json()
             return ChatGatewayAnswer(
@@ -375,7 +397,7 @@ class HttpChatGateway:
                 ],
             )
         except (KeyError, TypeError, ValueError):
-            return fallback_answer(message, settings=self.settings)
+            return fallback_answer(message, settings=self.settings, history=history)
 
 
 def get_chat_gateway(settings: Settings = Depends(get_settings)) -> ChatGateway:

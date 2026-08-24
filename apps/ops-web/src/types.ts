@@ -359,5 +359,7 @@ export type BrandingProfile = {
   phone: string; email: string | null; website: string; primary_color: string; accent_color: string;
   surface_color: string; text_color: string; logo_url: string; logo_dark_url: string; favicon_url: string;
   document_footer: string; asset_history: { asset_type: string; url: string; actor: string; created_at: string }[];
+  seasonal_theme_enabled: boolean; seasonal_theme_code: 'NONE' | 'JANUARY_NEW_YEAR' | 'FEBRUARY_FRIENDSHIP' | 'MARCH_MAINTENANCE' | 'APRIL_ROAD_SAFETY' | 'MAY_FAMILY' | 'JUNE_ENVIRONMENT' | 'JULY_TRAVEL' | 'AUGUST_WORKSHOP' | 'PATRIA_SEPTEMBER' | 'OCTOBER_PREVENTION' | 'NOVEMBER_SAVINGS' | 'DECEMBER_HOLIDAYS';
+  seasonal_theme_title: string; seasonal_theme_message: string;
   updated_at: string | null;
 };

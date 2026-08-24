@@ -11,6 +11,7 @@ import { AccessHub, CustomerAccess, CustomerPortal } from './components/Customer
 import { ProductCard } from './components/ProductCard';
 import { getProducts, getVehicleFitment } from './lib/api';
 import { useBranding } from './lib/branding';
+import { seasonalThemes } from './lib/seasonalThemes';
 import type { Product, VehicleFitment } from './types';
 import './styles.css';
 
@@ -78,9 +79,11 @@ function PublicLanding() {
   const telephoneHref = /^\+?[0-9 ()-]{7,}$/.test(phone)
     ? `tel:${phone.replace(/[^0-9+]/g, '')}`
     : null;
+  const seasonalTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code !== 'NONE' ? seasonalThemes[branding.seasonal_theme_code] : null;
 
   return (
     <div className="site-shell">
+      {seasonalTheme ? <aside className="patria-banner" aria-label="Tema especial del mes"><span className="patria-star" aria-hidden="true">{seasonalTheme.symbol}</span><div><strong>{branding.seasonal_theme_title || seasonalTheme.title}</strong><small>{branding.seasonal_theme_message || seasonalTheme.message}</small></div><span className="patria-ribbon" aria-hidden="true" /></aside> : null}
       <header className="site-header">
         <div className="container site-header__inner">
           <a href="#inicio" className="brand-link"><Brand /></a>

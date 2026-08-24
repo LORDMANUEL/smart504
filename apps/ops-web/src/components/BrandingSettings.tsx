@@ -22,6 +22,10 @@ export function BrandingSettings({ token }: { token: string }) {
         primary_color: draft.primary_color, accent_color: draft.accent_color,
         surface_color: draft.surface_color, text_color: draft.text_color,
         document_footer: draft.document_footer,
+        seasonal_theme_enabled: draft.seasonal_theme_enabled,
+        seasonal_theme_code: draft.seasonal_theme_code,
+        seasonal_theme_title: draft.seasonal_theme_title,
+        seasonal_theme_message: draft.seasonal_theme_message,
       });
       setDraft(saved); publishBranding(saved); setMessage('Marca guardada y aplicada a la operación.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'No se pudo guardar la marca.'); }
@@ -49,6 +53,14 @@ export function BrandingSettings({ token }: { token: string }) {
         <label>Correo<input type="email" value={draft.email ?? ''} onChange={(event) => field('email', event.target.value || null)} /></label>
         <label>Sitio web<input value={draft.website} onChange={(event) => field('website', event.target.value)} /></label>
         <label className="branding-settings__footer">Pie de documentos<textarea rows={3} value={draft.document_footer} onChange={(event) => field('document_footer', event.target.value)} /></label>
+        <fieldset className="seasonal-theme-settings">
+          <legend>Tema mensual de la landing</legend>
+          <label className="seasonal-theme-toggle"><input type="checkbox" checked={draft.seasonal_theme_enabled} onChange={(event) => field('seasonal_theme_enabled', event.target.checked)} /> Activar tema temporal</label>
+          <label>Tema<select value={draft.seasonal_theme_code} onChange={(event) => field('seasonal_theme_code', event.target.value as BrandingProfile['seasonal_theme_code'])}><option value="NONE">Sin tema</option><option value="JANUARY_NEW_YEAR">Enero · Nuevo año</option><option value="FEBRUARY_FRIENDSHIP">Febrero · Confianza</option><option value="MARCH_MAINTENANCE">Marzo · Mantenimiento</option><option value="APRIL_ROAD_SAFETY">Abril · Seguridad vial</option><option value="MAY_FAMILY">Mayo · Familia</option><option value="JUNE_ENVIRONMENT">Junio · Ambiente</option><option value="JULY_TRAVEL">Julio · Viajes</option><option value="AUGUST_WORKSHOP">Agosto · Taller</option><option value="PATRIA_SEPTEMBER">Septiembre patrio · Honduras y Centroamérica</option><option value="OCTOBER_PREVENTION">Octubre · Prevención</option><option value="NOVEMBER_SAVINGS">Noviembre · Ahorro</option><option value="DECEMBER_HOLIDAYS">Diciembre · Viajes seguros</option></select></label>
+          <label>Título<input value={draft.seasonal_theme_title} placeholder="Mes de la patria" onChange={(event) => field('seasonal_theme_title', event.target.value)} /></label>
+          <label className="branding-settings__footer">Mensaje<input value={draft.seasonal_theme_message} placeholder="Celebramos nuestra identidad centroamericana" onChange={(event) => field('seasonal_theme_message', event.target.value)} /></label>
+          <small>El tema sólo cambia decoración y animaciones de la landing; no altera tienda, formularios, precios ni accesibilidad.</small>
+        </fieldset>
         <div className="branding-colors">
           <label>Principal<input type="color" value={draft.primary_color} onChange={(event) => field('primary_color', event.target.value.toUpperCase())} /><code>{draft.primary_color}</code></label>
           <label>Acento<input type="color" value={draft.accent_color} onChange={(event) => field('accent_color', event.target.value.toUpperCase())} /><code>{draft.accent_color}</code></label>

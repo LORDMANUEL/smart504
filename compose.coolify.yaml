@@ -346,7 +346,7 @@ configs:
     content: |
       global
           log stdout format raw local0
-          maxconn 4096
+          maxconn 12000
 
       resolvers docker
           nameserver dns 127.0.0.11:53
@@ -367,6 +367,10 @@ configs:
 
       frontend smartdiag_gateway
           bind *:8084
+          # TLS terminates at Coolify/Traefik; browsers ignore HSTS received over plain HTTP.
+          http-response set-header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+          http-response set-header X-Content-Type-Options nosniff
+          http-response set-header Referrer-Policy strict-origin-when-cross-origin
           acl is_api path_beg /api/ /media/
           acl is_operations path_beg /tallerv1/
           use_backend platform_api_nodes if is_api
@@ -375,6 +379,10 @@ configs:
 
       frontend public_web
           bind *:8080
+          stick-table type ip size 500k expire 10m store http_req_rate(10s),conn_cur
+          http-request track-sc0 src
+          http-request deny deny_status 429 if { sc_http_req_rate(0) gt 300 }
+          http-request deny deny_status 429 if { sc_conn_cur(0) gt 80 }
           default_backend public_web_nodes
       backend public_web_nodes
           balance roundrobin
@@ -385,6 +393,10 @@ configs:
 
       frontend ops_web
           bind *:8081
+          stick-table type ip size 200k expire 10m store http_req_rate(10s),conn_cur
+          http-request track-sc0 src
+          http-request deny deny_status 429 if { sc_http_req_rate(0) gt 250 }
+          http-request deny deny_status 429 if { sc_conn_cur(0) gt 60 }
           default_backend ops_web_nodes
       backend ops_web_nodes
           balance roundrobin
@@ -395,13 +407,19 @@ configs:
 
       frontend platform_api
           bind *:8082
+          stick-table type ip size 500k expire 10m store http_req_rate(10s),conn_cur
+          http-request track-sc0 src
+          acl mutating method POST PUT PATCH DELETE
+          http-request deny deny_status 429 if mutating { sc_http_req_rate(0) gt 80 }
+          http-request deny deny_status 429 if { sc_http_req_rate(0) gt 400 }
+          http-request deny deny_status 429 if { sc_conn_cur(0) gt 100 }
           default_backend platform_api_nodes
       backend platform_api_nodes
           balance roundrobin
           option httpchk GET /ready
           http-check expect status 200
-          server api-a platform-api-a:8000 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
-          server api-b platform-api-b:8000 check resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+          server api-a platform-api-a:8000 check maxconn 1500 resolvers docker init-addr libc,none inter 3s fall 2 rise 2
+          server api-b platform-api-b:8000 check maxconn 1500 resolvers docker init-addr libc,none inter 3s fall 2 rise 2
 
       frontend frappe_erp
           bind *:8085

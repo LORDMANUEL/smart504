@@ -8,6 +8,7 @@ const fallbackBranding: BrandingProfile = {
   primary_color: '#ED111C', accent_color: '#C3000B', surface_color: '#FFFFFF', text_color: '#17181C',
   logo_url: '/brand/smartdiag504-logo.png', logo_dark_url: '/brand/smartdiag504-logo.png', favicon_url: '/brand/smartdiag504-logo.png',
   document_footer: 'Documento generado desde SmartDiag504.', asset_history: [], updated_at: null,
+  seasonal_theme_enabled: false, seasonal_theme_code: 'NONE', seasonal_theme_title: '', seasonal_theme_message: '',
 };
 let request: Promise<BrandingProfile> | null = null;
 
@@ -32,6 +33,7 @@ function applyBranding(profile: BrandingProfile) {
   root.style.setProperty('--gold', accessiblePrimary);
   root.style.setProperty('--gold-dark', accessibleAccent);
   root.style.setProperty('--danger', accessibleAccent);
+  root.dataset.seasonalTheme = profile.seasonal_theme_enabled ? profile.seasonal_theme_code : 'NONE';
   document.title = `${profile.display_name} | Taller y repuestos`;
   let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (!favicon) { favicon = document.createElement('link'); favicon.rel = 'icon'; document.head.appendChild(favicon); }

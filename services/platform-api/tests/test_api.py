@@ -24,6 +24,16 @@ def test_catalog_can_filter_by_query() -> None:
     assert all(item["category"] for item in products)
 
 
+def test_catalog_search_treats_sql_injection_as_plain_text() -> None:
+    hostile = "filtro' OR 1=1; DROP TABLE catalog_products; --"
+    response = client.get("/api/v1/catalog/products", params={"q": hostile})
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    follow_up = client.get("/api/v1/catalog/products", params={"q": "filtro"})
+    assert follow_up.status_code == 200
+    assert follow_up.json()["items"]
+
+
 def test_booking_is_idempotent() -> None:
     payload = {
         "customer_name": "Ana López",

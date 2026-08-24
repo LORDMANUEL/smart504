@@ -22,6 +22,8 @@ beforeEach(() => {
     address: 'Tegucigalpa, Honduras', phone: '', email: 'info@smartdiag504.com', website: 'https://taller.nexusmedi.org',
     primary_color: '#ED111C', accent_color: '#C3000B', surface_color: '#FFFFFF', text_color: '#17181C',
     logo_url: '/brand/smartdiag504-logo.png', logo_dark_url: '/brand/smartdiag504-logo.png', favicon_url: '/brand/smartdiag504-logo.png',
+    seasonal_theme_enabled: true, seasonal_theme_code: 'PATRIA_SEPTEMBER',
+    seasonal_theme_title: 'Mes de la patria', seasonal_theme_message: 'Celebramos Honduras y Centroamérica',
     document_footer: 'Documento generado desde SmartDiag504.', asset_history: [], updated_at: null,
   } : productPage), {
     status: 200,
@@ -35,6 +37,7 @@ describe('SmartDiag504 public site', () => {
     expect(screen.getByRole('heading', { name: /diagnóstico preciso/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /reservar diagnóstico/i })).toHaveAttribute('href', '#reservar');
     expect(screen.getAllByRole('link', { name: /comprar repuestos/i })[0]).toHaveAttribute('href', '/lading/repuestos');
+    expect(screen.getByText(/mes de la patria/i)).toBeInTheDocument();
   });
 
   it('filters catalog by search text', async () => {

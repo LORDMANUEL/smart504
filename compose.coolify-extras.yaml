@@ -50,7 +50,7 @@ services:
       ollama: {condition: service_healthy}
 
   ai-gateway-a:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    image: ${AI_GATEWAY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-ai-gateway:main}@${AI_GATEWAY_IMAGE_DIGEST}
     restart: unless-stopped
     environment: &ai-environment
       HOME: /tmp
@@ -78,7 +78,7 @@ services:
       start_period: 30s
 
   ai-gateway-b:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    image: ${AI_GATEWAY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-ai-gateway:main}@${AI_GATEWAY_IMAGE_DIGEST}
     restart: unless-stopped
     environment: *ai-environment
     networks:
@@ -92,7 +92,7 @@ services:
     healthcheck: *ai-health
 
   rag-seed:
-    image: ghcr.io/lordmanuel/smartdiag504-ai-gateway:main@sha256:9bfe321a844fe8e8138b5aeb1d9ccd473f01fd65d4b27863cfbe004bb9c482d9
+    image: ${AI_GATEWAY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-ai-gateway:main}@${AI_GATEWAY_IMAGE_DIGEST}
     restart: "no"
     exclude_from_hc: true
     environment:

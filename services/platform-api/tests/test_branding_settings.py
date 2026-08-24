@@ -32,10 +32,15 @@ def test_branding_can_be_updated_uploaded_and_used_in_document_preview(client, a
             "surface_color": "#FFFFFF",
             "text_color": "#17202A",
             "document_footer": "Gracias por confiar en nuestro taller.",
+            "seasonal_theme_enabled": True,
+            "seasonal_theme_code": "PATRIA_SEPTEMBER",
+            "seasonal_theme_title": "Mes de la patria",
+            "seasonal_theme_message": "Celebramos Honduras y Centroamérica",
         },
     )
     assert updated.status_code == 200
     assert updated.json()["primary_color"] == "#123456"
+    assert updated.json()["seasonal_theme_code"] == "PATRIA_SEPTEMBER"
 
     uploaded = client.post(
         "/api/v1/operations/settings/branding/assets",

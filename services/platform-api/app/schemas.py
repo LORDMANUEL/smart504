@@ -514,6 +514,10 @@ class BrandingProfileUpdate(BaseModel):
     surface_color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     text_color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     document_footer: str = Field(default="", max_length=500)
+    seasonal_theme_enabled: bool = False
+    seasonal_theme_code: Literal["NONE", "JANUARY_NEW_YEAR", "FEBRUARY_FRIENDSHIP", "MARCH_MAINTENANCE", "APRIL_ROAD_SAFETY", "MAY_FAMILY", "JUNE_ENVIRONMENT", "JULY_TRAVEL", "AUGUST_WORKSHOP", "PATRIA_SEPTEMBER", "OCTOBER_PREVENTION", "NOVEMBER_SAVINGS", "DECEMBER_HOLIDAYS"] = "NONE"
+    seasonal_theme_title: str = Field(default="", max_length=100)
+    seasonal_theme_message: str = Field(default="", max_length=240)
 
 
 class BrandingProfileRead(BrandingProfileUpdate):

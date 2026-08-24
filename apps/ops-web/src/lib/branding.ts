@@ -8,6 +8,7 @@ export const fallbackBranding: BrandingProfile = {
   primary_color: '#ED111C', accent_color: '#C3000B', surface_color: '#FFFFFF', text_color: '#17181C',
   logo_url: '/brand/smartdiag504-logo.png', logo_dark_url: '/brand/smartdiag504-logo.png', favicon_url: '/brand/smartdiag504-logo.png',
   document_footer: 'Documento generado desde SmartDiag504.', asset_history: [], updated_at: null,
+  seasonal_theme_enabled: false, seasonal_theme_code: 'NONE', seasonal_theme_title: '', seasonal_theme_message: '',
 };
 
 let brandingRequest: Promise<BrandingProfile> | null = null;
