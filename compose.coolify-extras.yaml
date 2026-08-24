@@ -49,6 +49,19 @@ services:
     depends_on:
       ollama: {condition: service_healthy}
 
+  ai-model-cache-init:
+    image: alpine:3.22
+    restart: "no"
+    exclude_from_hc: true
+    network_mode: none
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 10001:10001 /cache"]
+    volumes:
+      - ai-model-cache:/cache
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN"]
+    security_opt: ["no-new-privileges:true"]
+
   ai-gateway-a:
     image: ${AI_GATEWAY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-ai-gateway:main}@${AI_GATEWAY_IMAGE_DIGEST}
     restart: unless-stopped
@@ -71,6 +84,7 @@ services:
     depends_on:
       chromadb: {condition: service_healthy}
       ollama-model-init: {condition: service_completed_successfully}
+      ai-model-cache-init: {condition: service_completed_successfully}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     healthcheck: &ai-health
@@ -92,6 +106,7 @@ services:
     depends_on:
       chromadb: {condition: service_healthy}
       ollama-model-init: {condition: service_completed_successfully}
+      ai-model-cache-init: {condition: service_completed_successfully}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     healthcheck: *ai-health

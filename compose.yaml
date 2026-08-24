@@ -270,6 +270,18 @@ services:
       retries: 5
       start_period: 10s
 
+  ai-model-cache-init:
+    image: alpine:3.22
+    restart: "no"
+    network_mode: none
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 10001:10001 /cache"]
+    volumes:
+      - ai-model-cache:/cache
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN"]
+    security_opt: ["no-new-privileges:true"]
+
   ai-gateway-a:
     image: smartdiag504/ai-gateway:${APP_IMAGE_TAG:-0.4.0}
     build:
@@ -282,6 +294,7 @@ services:
       - ai-model-cache:/tmp/.cache
     depends_on:
       chromadb: {condition: service_healthy}
+      ai-model-cache-init: {condition: service_completed_successfully}
     networks: [app, data, egress]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
@@ -302,6 +315,7 @@ services:
       - ai-model-cache:/tmp/.cache
     depends_on:
       chromadb: {condition: service_healthy}
+      ai-model-cache-init: {condition: service_completed_successfully}
     networks: [app, data, egress]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
