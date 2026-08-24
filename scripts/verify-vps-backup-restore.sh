@@ -39,11 +39,11 @@ docker exec "$my_container" mariadb-admin ping -uroot -p"$test_password" --silen
 # network listener is ready. Validate the same TCP path used by the restore.
 for _ in $(seq 1 60); do
   docker run --rm --entrypoint mariadb-admin --network "$network" "$image" \
-    mariadb-admin ping -h "$my_container" -uroot -p"$test_password" --silent >/dev/null 2>&1 && break
+    ping -h "$my_container" -uroot -p"$test_password" --silent >/dev/null 2>&1 && break
   sleep 1
 done
 docker run --rm --entrypoint mariadb-admin --network "$network" "$image" \
-  mariadb-admin ping -h "$my_container" -uroot -p"$test_password" --silent >/dev/null
+  ping -h "$my_container" -uroot -p"$test_password" --silent >/dev/null
 
 docker run --rm --entrypoint bash --network "$network" -e PGPASSWORD="$test_password" \
   -v smartdiag504_backup-data:/backups:ro "$image" \
