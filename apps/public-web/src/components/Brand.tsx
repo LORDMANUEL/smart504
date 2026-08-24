@@ -10,6 +10,10 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         alt={branding.display_name}
         width={compact ? 108 : 148}
         height={compact ? 42 : 58}
+        onError={(event) => {
+          event.currentTarget.onerror = null;
+          event.currentTarget.src = '/brand/smartdiag504-logo.png';
+        }}
       />
     </span>
   );

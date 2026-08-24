@@ -13,10 +13,21 @@ function runtimeApiBase(): string {
 
 const API_BASE = runtimeApiBase();
 
+function apiAssetUrl(value: string): string {
+  if (!value || !API_BASE || !value.startsWith('/media/')) return value;
+  return `${API_BASE}${value}`;
+}
+
 export async function getBranding(): Promise<BrandingProfile> {
   const response = await fetch(`${API_BASE}/api/v1/branding`);
   if (!response.ok) throw new Error('No se pudo cargar la marca del taller');
-  return response.json();
+  const profile = await response.json() as BrandingProfile;
+  return {
+    ...profile,
+    logo_url: apiAssetUrl(profile.logo_url),
+    logo_dark_url: apiAssetUrl(profile.logo_dark_url),
+    favicon_url: apiAssetUrl(profile.favicon_url),
+  };
 }
 
 type ApiProductImage = {

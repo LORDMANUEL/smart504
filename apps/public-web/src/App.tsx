@@ -80,6 +80,7 @@ function PublicLanding() {
     ? `tel:${phone.replace(/[^0-9+]/g, '')}`
     : null;
   const seasonalTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code !== 'NONE' ? seasonalThemes[branding.seasonal_theme_code] : null;
+  const isPatriaTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code === 'PATRIA_SEPTEMBER';
 
   return (
     <div className="site-shell">
@@ -117,7 +118,7 @@ function PublicLanding() {
       </header>
 
       <main>
-        <section id="inicio" className="hero">
+        <section id="inicio" className={isPatriaTheme ? 'hero hero--patria' : 'hero'}>
           <div className="container hero__grid">
             <div className="hero__copy">
               <h1>Diagnóstico preciso.<br /><span>Decisiones claras.</span></h1>
@@ -132,7 +133,7 @@ function PublicLanding() {
                 <span><CarFront size={18} /> Seguimiento de OT</span>
               </div>
             </div>
-            <div className="hero__media">
+            <div className="hero__media" aria-hidden={isPatriaTheme || undefined}>
               <ExistingPhoto photo={stockPhotos.hero} alt="Vehículo dentro de un taller automotriz profesional" loading="eager" />
               <div className="hero__status">
                 <span className="status-dot" />
