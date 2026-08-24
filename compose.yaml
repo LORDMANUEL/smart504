@@ -57,6 +57,7 @@ x-ai-environment: &ai-environment
   LLM_PROVIDER: ${LLM_PROVIDER:-demo}
   LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
   LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b-instruct}
+  LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-90}
   LLM_API_KEY: ${LLM_API_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   CHROMA_URL: http://chromadb:8000
@@ -277,6 +278,8 @@ services:
     pull_policy: ${PULL_POLICY:-missing}
     restart: unless-stopped
     environment: *ai-environment
+    volumes:
+      - ai-model-cache:/tmp/.cache
     depends_on:
       chromadb: {condition: service_healthy}
     networks: [app, data, egress]
@@ -295,6 +298,8 @@ services:
     pull_policy: ${PULL_POLICY:-missing}
     restart: unless-stopped
     environment: *ai-environment
+    volumes:
+      - ai-model-cache:/tmp/.cache
     depends_on:
       chromadb: {condition: service_healthy}
     networks: [app, data, egress]
@@ -843,6 +848,7 @@ volumes:
   garage-data: {}
   backup-data: {}
   ollama-data: {}
+  ai-model-cache: {}
   prometheus-data: {}
   grafana-data: {}
 

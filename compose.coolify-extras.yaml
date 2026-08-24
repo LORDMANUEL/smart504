@@ -59,12 +59,15 @@ services:
       LLM_PROVIDER: ollama
       LLM_BASE_URL: http://ollama:11434/v1
       LLM_MODEL: ${LLM_MODEL:-gemma3:270m}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-90}
       CHROMA_URL: http://chromadb:8000
       CHROMA_ENABLED: "true"
       CHROMA_COLLECTION: smartdiag_knowledge
     networks:
       core:
         aliases: [ai-gateway]
+    volumes:
+      - ai-model-cache:/tmp/.cache
     depends_on:
       chromadb: {condition: service_healthy}
       ollama-model-init: {condition: service_completed_successfully}
@@ -81,6 +84,8 @@ services:
     image: ${AI_GATEWAY_IMAGE:-ghcr.io/lordmanuel/smartdiag504-ai-gateway:main}@${AI_GATEWAY_IMAGE_DIGEST}
     restart: unless-stopped
     environment: *ai-environment
+    volumes:
+      - ai-model-cache:/tmp/.cache
     networks:
       core:
         aliases: [ai-gateway]
@@ -183,6 +188,7 @@ volumes:
   garage-meta:
   garage-data:
   clamav-data:
+  ai-model-cache:
 
 networks:
   core:

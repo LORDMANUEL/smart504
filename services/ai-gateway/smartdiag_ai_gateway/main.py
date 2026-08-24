@@ -29,6 +29,7 @@ def _provider_from_env(*, testing: bool) -> LLMProvider:
             base_url=os.getenv("LLM_BASE_URL", "http://ollama:11434/v1"),
             api_key=os.getenv("LLM_API_KEY", os.getenv("OPENAI_API_KEY", "")),
             model=os.getenv("LLM_MODEL", "qwen2.5:7b-instruct"),
+            timeout=float(os.getenv("LLM_TIMEOUT_SECONDS", "90")),
         )
     raise RuntimeError(f"Unsupported LLM_PROVIDER: {provider}")
 
