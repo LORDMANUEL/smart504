@@ -256,7 +256,7 @@ async def answer_public_chat(
         return fallback_answer(message, context, history)
 
     facts = conversation_facts(message, history)
-    safe_context = [item[:1800] for item in context if not is_prompt_attack(item)][:16]
+    safe_context = [item[:500] for item in context if not is_prompt_attack(item)][:8]
     if facts:
         safe_context.insert(0, "CUSTOMER_FACTS|" + "|".join(f"{key}={value}" for key, value in facts.items()))
 

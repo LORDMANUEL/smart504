@@ -52,11 +52,20 @@ class DemoProvider:
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, *, base_url: str, api_key: str, model: str, timeout: float = 45.0) -> None:
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        timeout: float = 45.0,
+        max_tokens: int = 160,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+        self.max_tokens = max_tokens
 
     async def ready(self) -> bool:
         """Verify the configured provider without spending generation tokens."""
@@ -103,6 +112,7 @@ class OpenAICompatibleProvider:
                     "model": self.model,
                     "messages": messages,
                     "temperature": 0.15,
+                    "max_tokens": self.max_tokens,
                 },
             )
             response.raise_for_status()
