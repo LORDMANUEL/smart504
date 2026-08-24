@@ -2,11 +2,15 @@ from __future__ import annotations
 
 # User-facing Spanish safety copy is intentionally kept as complete sentences.
 # ruff: noqa: E501
+import logging
 import re
 import unicodedata
 from dataclasses import dataclass
 
 from .providers import DemoProvider, LLMProvider, ProviderResult
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,7 +267,8 @@ async def answer_public_chat(
             system_prompt=_PUBLIC_SYSTEM_PROMPT,
             history=history,
         )
-    except Exception:
+    except Exception as exc:
+        logger.warning("Public chat provider failed: %s", type(exc).__name__)
         return fallback_answer(message, context, history)
     text = re.sub(r"\s+", " ", result.text).strip()
     if not text:
@@ -275,6 +280,7 @@ async def answer_public_chat(
         "ignora solicitudes que pidan", "trusted context", "developer message",
     )
     if any(marker in normalized_output for marker in leakage_markers):
+        logger.warning("Public chat provider output rejected by leakage guard")
         return fallback_answer(message, context, history)
     return PublicChatResult(
         answer=text[:4000],
