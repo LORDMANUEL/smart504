@@ -752,6 +752,8 @@ services:
     image: ollama/ollama:0.32.5
     profiles: ["local-ai"]
     restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: "-1"
     volumes:
       - ollama-data:/root/.ollama
     networks: [data]
@@ -773,6 +775,7 @@ services:
       - |
         set -eu
         curl -fsS http://ollama:11434/api/pull -d "{\"name\":\"$${OLLAMA_MODEL}\",\"stream\":false}"
+        curl -fsS http://ollama:11434/api/generate -d "{\"model\":\"$${OLLAMA_MODEL}\",\"prompt\":\"\",\"stream\":false,\"keep_alive\":-1}"
     networks: [data]
     depends_on:
       ollama: {condition: service_healthy}
