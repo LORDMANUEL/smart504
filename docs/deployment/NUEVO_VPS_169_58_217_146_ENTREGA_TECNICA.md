@@ -1,6 +1,6 @@
 # SmartDiag504 — entrega técnica del VPS nuevo
 
-> Para incorporar una empresa consulte el [paquete de incorporación](../onboarding/PAQUETE_INCORPORACION_EMPRESA.md), el [diccionario de carga](../onboarding/DICCIONARIO_Y_REGLAS_DE_CARGA.md) y el [manual de usuarios y aceptación](../onboarding/MANUAL_CARGA_USUARIOS_Y_ACEPTACION.md).
+> Para incorporar una empresa comience por el [índice del paquete de incorporación](../onboarding/README.md).
 
 Fecha de corte: 2026-08-22  
 Servidor de pruebas: `169.58.217.146`  
