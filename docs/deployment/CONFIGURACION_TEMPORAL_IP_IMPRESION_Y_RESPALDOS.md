@@ -71,3 +71,23 @@ readlink -f /var/backups/smartdiag504-local/latest
 ```
 
 No se guardan contraseñas en este documento.
+
+## Evidencia de aceptación en el VPS
+
+Corte ejecutado el 2026-08-23 (hora Honduras) sobre el despliegue Coolify
+`3xpax8lkbxxrdodaqamtv9un` y el commit `f264649`:
+
+- Despliegue Coolify: `finished`; migración de plataforma, configuración inicial y migración ERPNext terminaron con código 0.
+- Dos réplicas de `platform-api` saludables.
+- Landing, portal de clientes, operaciones, API y ERPNext respondieron HTTP 200 por HTTPS temporal `sslip.io`.
+- `/ready`: base de datos, Valkey, Garage/S3, ERPNext, esquema, IA y seguridad en estado `ok`.
+- Sucursal `MAIN` y cuatro bodegas operativas verificadas en PostgreSQL.
+- 33 plantillas registradas, 11 publicadas como predeterminadas y 11 tipos documentales cubiertos.
+- Vista previa autenticada de cotización: HTTP 200, contenido de cotización presente y logo PNG embebido como `data:` para impresión sin dependencia externa.
+- Matriz de producción autenticada: 9/10. Único control pendiente: SMTP con el dominio definitivo.
+- Snapshot local `/var/backups/smartdiag504-local/20260824T032425Z`: manifiesto SHA-256 completo y restauración aislada de PostgreSQL con 62 tablas.
+- CI y construcción de imágenes del commit `f264649` terminaron en `success`.
+
+La instalación queda operativa para pruebas completas por IP. No se debe afirmar
+correo productivo ni certificación final de producción mientras SMTP, SPF, DKIM y
+DMARC no estén configurados con el dominio definitivo.
