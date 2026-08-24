@@ -37,9 +37,9 @@ docker exec "$my_container" mariadb-admin ping -uroot -p"$test_password" --silen
 
 docker run --rm --entrypoint bash --network "$network" -e PGPASSWORD="$test_password" \
   -v smartdiag504_backup-data:/backups:ro "$image" \
-  bash -lc "createdb -h $pg_container -U postgres smartdiag_restore && pg_restore -h $pg_container -U postgres -d smartdiag_restore --no-owner /backups/$stamp/platform.pgdump && psql -h $pg_container -U postgres -d smartdiag_restore -Atc 'select count(*) from alembic_version'"
+  -lc "createdb -h $pg_container -U postgres smartdiag_restore && pg_restore -h $pg_container -U postgres -d smartdiag_restore --no-owner /backups/$stamp/platform.pgdump && psql -h $pg_container -U postgres -d smartdiag_restore -Atc 'select count(*) from alembic_version'"
 
 docker run --rm --entrypoint bash --network "$network" -v smartdiag504_backup-data:/backups:ro "$image" \
-  bash -lc "zstdcat /backups/$stamp/erpnext-all.sql.zst | mariadb -h $my_container -uroot -p'$test_password' && mariadb -h $my_container -uroot -p'$test_password' -Nse 'show databases' | grep -Ev '^(information_schema|mysql|performance_schema|sys)$' | grep -q ."
+  -lc "zstdcat /backups/$stamp/erpnext-all.sql.zst | mariadb -h $my_container -uroot -p'$test_password' && mariadb -h $my_container -uroot -p'$test_password' -Nse 'show databases' | grep -Ev '^(information_schema|mysql|performance_schema|sys)$' | grep -q ."
 
 printf 'Isolated restore validated for backup %s\n' "$stamp"
