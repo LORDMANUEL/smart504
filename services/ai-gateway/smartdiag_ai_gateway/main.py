@@ -30,7 +30,7 @@ def _provider_from_env(*, testing: bool) -> LLMProvider:
             api_key=os.getenv("LLM_API_KEY", os.getenv("OPENAI_API_KEY", "")),
             model=os.getenv("LLM_MODEL", "qwen2.5:7b-instruct"),
             timeout=float(os.getenv("LLM_TIMEOUT_SECONDS", "90")),
-            max_tokens=int(os.getenv("LLM_MAX_TOKENS", "36")),
+            max_tokens=int(os.getenv("LLM_MAX_TOKENS", "24")),
         )
     raise RuntimeError(f"Unsupported LLM_PROVIDER: {provider}")
 

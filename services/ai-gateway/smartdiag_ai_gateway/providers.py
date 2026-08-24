@@ -59,7 +59,7 @@ class OpenAICompatibleProvider:
         api_key: str,
         model: str,
         timeout: float = 45.0,
-        max_tokens: int = 36,
+        max_tokens: int = 24,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
