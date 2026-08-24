@@ -217,6 +217,7 @@ class StoreOrderCreate(BaseModel):
     email: EmailStr | None = None
     vehicle_vin: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=2000)
+    promo_code: str | None = Field(default=None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
     idempotency_key: str = Field(
         min_length=8,
         max_length=128,
@@ -246,6 +247,9 @@ class StoreOrderRead(ORMModel):
     status: str
     currency: str
     subtotal: Decimal
+    discount: Decimal
+    total: Decimal
+    promo_code: str | None
     erpnext_sales_order_id: str | None
     source: str
     branch_id: str | None

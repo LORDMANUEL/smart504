@@ -15,7 +15,7 @@ from PIL import Image, UnidentifiedImageError
 
 from app.auth import require_admin
 from app.db import get_db
-from app.models import CatalogProduct, Customer, FlowEvent, StoreOrder, StoreOrderItem
+from app.models import CatalogProduct, ClientUser, Customer, FlowEvent, StoreOrder, StoreOrderItem, WorkshopSetting
 from app.config import get_settings
 from app.request_context import current_identity
 from app.services.media import read_private_evidence, store_private_evidence
@@ -24,6 +24,7 @@ from app.request_context import audit_actor
 from app.services.notifications import enqueue_notification
 from app.services.branch_scope import operational_branch_id
 from app.services.public_abuse import enforce_public_limit, reject_honeypot
+from app.services.pricing import product_pricing_policy, validate_transaction_floor
 
 router = APIRouter(prefix="/api/v1", tags=["store"])
 admin_router = APIRouter(
@@ -189,6 +190,7 @@ def create_store_order(
 
     subtotal = Decimal("0.00")
     lines: list[StoreOrderItem] = []
+    pricing_lines: list[tuple[Decimal, Decimal, Decimal]] = []
     for product_id, quantity in quantities.items():
         product = by_id[product_id]
         if product.stock_status == "OUT_OF_STOCK":
@@ -201,6 +203,7 @@ def create_store_order(
         unit_price = Decimal(product.price).quantize(MONEY, rounding=ROUND_HALF_UP)
         line_total = (unit_price * quantity).quantize(MONEY, rounding=ROUND_HALF_UP)
         subtotal += line_total
+        pricing_lines.append((Decimal(quantity), unit_price, product_pricing_policy(product).minimum_sale_price))
         lines.append(
             StoreOrderItem(
                 product_id=product.id,
@@ -212,6 +215,21 @@ def create_store_order(
             )
         )
 
+    promo_code = data.promo_code.strip().upper() if data.promo_code else None
+    discount = Decimal("0.00")
+    if promo_code:
+        setting = db.get(WorkshopSetting, "marketing_campaigns")
+        today = datetime.now(UTC).date().isoformat()
+        campaign = next((item for item in (setting.value.get("items", []) if setting else [])
+                         if str(item.get("promo_code") or "").upper() == promo_code
+                         and item.get("status") == "PUBLISHED"
+                         and (not item.get("valid_from") or str(item["valid_from"]) <= today)
+                         and (not item.get("valid_until") or str(item["valid_until"]) >= today)), None)
+        if campaign is None:
+            raise HTTPException(status_code=422, detail="El código promocional no existe o no está vigente")
+        discount = (subtotal * Decimal(str(campaign.get("discount_percent") or 0)) / Decimal("100")).quantize(MONEY, rounding=ROUND_HALF_UP)
+        validate_transaction_floor(lines=pricing_lines, discount=discount)
+
     order = StoreOrder(
         order_number=_generate_order_number(),
         customer_name=data.customer_name.strip(),
@@ -222,6 +240,9 @@ def create_store_order(
         status="PENDING_CONFIRMATION",
         currency=next(iter(currencies)),
         subtotal=subtotal.quantize(MONEY, rounding=ROUND_HALF_UP),
+        discount=discount,
+        total=(subtotal - discount).quantize(MONEY, rounding=ROUND_HALF_UP),
+        promo_code=promo_code,
         idempotency_key=data.idempotency_key,
         source="WEB",
         branch_id=operational_branch_id(db),
@@ -248,6 +269,8 @@ def create_store_order(
                 "fulfillment_status": order.fulfillment_status,
                 "assigned_cashier": order.assigned_cashier,
                 "outside_business_hours_notice": True,
+                "promo_code": promo_code,
+                "discount": str(discount),
             },
         )
     )
@@ -369,5 +392,12 @@ def update_store_order(
             aggregate_id=order.id,
             idempotency_key=f"store-order:{order.id}:{data.status}:whatsapp",
         )
+    if data.status == "PAID" and previous != "PAID" and order.customer_id:
+        client = db.scalar(select(ClientUser).where(ClientUser.customer_id == order.customer_id, ClientUser.organization_id == order.organization_id))
+        already_awarded = db.scalar(select(FlowEvent.id).where(FlowEvent.module == "LOYALTY", FlowEvent.action == "POINTS_EARNED", FlowEvent.item_reference == order.order_number))
+        if client is not None and client.loyalty_enabled and not already_awarded:
+            earned = max(1, int(Decimal(order.total) // Decimal("10")))
+            client.loyalty_points += earned
+            db.add(FlowEvent(module="LOYALTY", action="POINTS_EARNED", item_reference=order.order_number, actor=audit_actor(data.actor), result="SUCCESS", metadata_json={"points": earned, "balance": client.loyalty_points, "rule": "1_POINT_PER_HNL_10"}))
     db.commit()
     return _load_order(db, order.id)

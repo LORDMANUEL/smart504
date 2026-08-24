@@ -1,4 +1,4 @@
-import type { AppointmentSlot, BrandingProfile, ChatHistory, ChatReply, ChatSession, ClientAppointment, ClientDashboard, ClientVehicle, Product, ProductPage, StoreOrder, StoreOrderInput, VehicleFitment } from '../types';
+import type { AppointmentSlot, BrandingProfile, ChatHistory, ChatReply, ChatSession, ClientAppointment, ClientDashboard, ClientVehicle, MaintenancePackage, Product, ProductPage, StoreOrder, StoreOrderInput, StorePromotion, VehicleFitment } from '../types';
 
 function runtimeApiBase(): string {
   const configured = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
@@ -193,6 +193,18 @@ export async function updateClientProfile(payload: { full_name: string; email: s
   return response.json() as Promise<ClientDashboard['profile']>;
 }
 
+export async function getMaintenancePackages(): Promise<MaintenancePackage[]> {
+  const response = await fetch(`${API_BASE}/api/v1/client-portal/maintenance-packages`, { credentials: 'include' });
+  if (!response.ok) throw await parseError(response, 'No se pudieron cargar los paquetes');
+  return response.json() as Promise<MaintenancePackage[]>;
+}
+
+export async function redeemMaintenancePackage(packageId: string, vehicleId: string): Promise<{ status: string; package_name: string; remaining_points: number }> {
+  const response = await fetch(`${API_BASE}/api/v1/client-portal/loyalty/redeem`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packageId, vehicle_id: vehicleId, idempotency_key: crypto.randomUUID() }) });
+  if (!response.ok) throw await parseError(response, 'No se pudo canjear el mantenimiento');
+  return response.json();
+}
+
 export async function decideClientQuoteLine(quoteId: string, lineId: string, decision: 'APPROVED' | 'REJECTED'): Promise<void> {
   const response = await fetch(`${API_BASE}/api/v1/client-portal/quotes/${quoteId}/lines/${lineId}?decision=${decision}`, { method: 'PATCH', credentials: 'include' });
   if (!response.ok) throw await parseError(response, 'No se pudo guardar la decisión');
@@ -218,6 +230,12 @@ export async function getProducts(query: string, signal?: AbortSignal): Promise<
     return { ...payload, items };
   }
   return { items: payload.map(mapProduct), total: payload.length, limit: 24, offset: 0 };
+}
+
+export async function getStorePromotions(): Promise<StorePromotion[]> {
+  const response = await fetch(`${API_BASE}/api/v1/marketing/campaigns`, { headers: { Accept: 'application/json' } });
+  if (!response.ok) throw await parseError(response, 'No se pudieron cargar las promociones');
+  return response.json() as Promise<StorePromotion[]>;
 }
 
 export async function getVehicleFitment(vin: string, signal?: AbortSignal): Promise<VehicleFitment> {

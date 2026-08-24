@@ -9,13 +9,14 @@ type CheckoutDrawerProps = {
   onClose: () => void;
   onRemove: (productId: string) => void;
   onCompleted: (order: StoreOrder) => void;
+  initialPromoCode?: string;
 };
 
 function formatMoney(value: number | string, currency = 'HNL') {
   return new Intl.NumberFormat('es-HN', { style: 'currency', currency }).format(Number(value));
 }
 
-export function CheckoutDrawer({ open, cart, onClose, onRemove, onCompleted }: CheckoutDrawerProps) {
+export function CheckoutDrawer({ open, cart, onClose, onRemove, onCompleted, initialPromoCode = '' }: CheckoutDrawerProps) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [createdOrder, setCreatedOrder] = useState<StoreOrder | null>(null);
@@ -53,6 +54,7 @@ export function CheckoutDrawer({ open, cart, onClose, onRemove, onCompleted }: C
         email: String(form.get('email') ?? '') || undefined,
         vehicle_vin: String(form.get('vehicle_vin') ?? '') || undefined,
         notes: String(form.get('notes') ?? '') || undefined,
+        promo_code: String(form.get('promo_code') ?? '') || undefined,
         idempotency_key: crypto.randomUUID(),
         items: lines.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
       });
@@ -103,6 +105,7 @@ export function CheckoutDrawer({ open, cart, onClose, onRemove, onCompleted }: C
               ))}
             </div>
             <div className="checkout-total"><span>Subtotal estimado</span><strong>{formatMoney(total)}</strong></div>
+            <label className="checkout-promo">Código de descuento<input name="promo_code" defaultValue={initialPromoCode} maxLength={40} autoCapitalize="characters" placeholder="Ej. PATRIA504" /></label>
             <p className="checkout-note"><PackageCheck size={17} /> El pedido queda pendiente de confirmación. No se descuenta inventario ni se factura hasta validarlo con el equipo.</p>
 
             <div className="checkout-fields">

@@ -17,7 +17,7 @@ const productPage = {
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/lading');
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(String(input).endsWith('/api/v1/branding') ? {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => { const url = String(input); return new Response(JSON.stringify(url.endsWith('/api/v1/branding') ? {
     organization_id: 'SMARTDIAG504', display_name: 'SmartDiag504', legal_name: 'SmartDiag504', tax_id: '',
     address: 'Tegucigalpa, Honduras', phone: '', email: 'info@smartdiag504.com', website: 'https://taller.nexusmedi.org',
     primary_color: '#ED111C', accent_color: '#C3000B', surface_color: '#FFFFFF', text_color: '#17181C',
@@ -25,10 +25,10 @@ beforeEach(() => {
     seasonal_theme_enabled: true, seasonal_theme_code: 'PATRIA_SEPTEMBER',
     seasonal_theme_title: 'Mes de la patria', seasonal_theme_message: 'Celebramos Honduras y Centroamérica',
     document_footer: 'Documento generado desde SmartDiag504.', asset_history: [], updated_at: null,
-  } : productPage), {
+  } : url.endsWith('/api/v1/marketing/campaigns') ? [] : productPage), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
-  })));
+  }); }));
 });
 
 describe('SmartDiag504 public site', () => {

@@ -85,6 +85,7 @@ export type StoreOrderInput = {
   email?: string;
   vehicle_vin?: string;
   notes?: string;
+  promo_code?: string;
   idempotency_key: string;
   items: StoreOrderItemInput[];
 };
@@ -105,7 +106,17 @@ export type StoreOrder = {
   status: string;
   currency: string;
   subtotal: string;
+  discount?: string;
+  total?: string;
+  promo_code?: string | null;
   items: StoreOrderItem[];
+};
+
+export type StorePromotion = {
+  id: string; title: string; description: string; audience: string; call_to_action: string;
+  media_url: string | null; media_type: string | null; public_path: string;
+  promo_code?: string | null; discount_percent?: number; store_banner?: boolean;
+  valid_from?: string | null; valid_until?: string | null;
 };
 
 export type AppointmentSlot = { starts_at: string; available: boolean };
@@ -142,6 +153,7 @@ export type ClientDashboard = {
   quotes: ClientQuote[];
   invoices: Array<{ number: string; work_order_id: string; total: string; created_at: string }>;
 };
+export type MaintenancePackage = { id: string; name: string; description: string; points: number; service: string; available: boolean };
 export type BrandingProfile = {
   organization_id: string; display_name: string; legal_name: string; tax_id: string; address: string;
   phone: string; email: string | null; website: string; primary_color: string; accent_color: string;

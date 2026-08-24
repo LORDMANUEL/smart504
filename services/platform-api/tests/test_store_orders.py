@@ -43,12 +43,34 @@ def test_public_customer_can_submit_idempotent_parts_order(client, admin_headers
     assert body["whatsapp_status"] == "PENDING"
     assert body["order_number"].startswith("WEB-")
     assert body["subtotal"] == "1751.00"
+    assert body["discount"] == "0.00"
+    assert body["total"] == "1751.00"
     assert body["items"][0]["sku"] == product["sku"]
     assert body["items"][0]["quantity"] == 2
 
     replay = client.post("/api/v1/store/orders", json=payload)
     assert replay.status_code == 200
     assert replay.json()["id"] == body["id"]
+
+
+def test_published_promotion_applies_server_side_discount(client, admin_headers) -> None:
+    product = create_product(client, admin_headers)
+    campaign = client.post("/api/v1/operations/marketing/campaigns", headers=admin_headers, json={
+        "title": "Promoción patria de prueba", "description": "Descuento verificado en servidor",
+        "promo_code": "PATRIA504", "discount_percent": 10, "store_banner": True,
+    })
+    assert campaign.status_code == 201
+    published = client.post(f"/api/v1/operations/marketing/campaigns/{campaign.json()['id']}/publish", headers=admin_headers)
+    assert published.status_code == 200
+    response = client.post("/api/v1/store/orders", json={
+        "customer_name": "Cliente Promoción", "phone": "+504 9555-0000",
+        "promo_code": "patria504", "idempotency_key": f"promotion-{os.urandom(4).hex()}",
+        "items": [{"product_id": product["id"], "quantity": 1}],
+    })
+    assert response.status_code == 201
+    assert response.json()["promo_code"] == "PATRIA504"
+    assert response.json()["discount"] == "87.55"
+    assert response.json()["total"] == "787.95"
 
 
 def test_store_rejects_unavailable_product(client, admin_headers) -> None:

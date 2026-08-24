@@ -25,6 +25,7 @@ from app.services.malware import scan_bytes
 admin_router = APIRouter(prefix="/api/v1/operations/marketing", tags=["marketing"], dependencies=[Depends(require_admin)])
 public_router = APIRouter(tags=["marketing-public"])
 SETTING_KEY = "marketing_campaigns"
+PACKAGE_SETTING_KEY = "maintenance_packages"
 
 
 class CampaignCreate(BaseModel):
@@ -37,6 +38,32 @@ class CampaignCreate(BaseModel):
     call_to_action: str = Field(default="Agenda hoy", min_length=2, max_length=80)
     tv_enabled: bool = True
     display_seconds: int = Field(default=12, ge=5, le=120)
+    promo_code: str | None = Field(default=None, min_length=4, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    discount_percent: int = Field(default=0, ge=0, le=80)
+    store_banner: bool = True
+
+
+class MaintenancePackageCreate(BaseModel):
+    name: str = Field(min_length=4, max_length=180)
+    description: str = Field(min_length=4, max_length=500)
+    points: int = Field(ge=1, le=1000000)
+    service: str = Field(min_length=3, max_length=180)
+
+
+@admin_router.get("/maintenance-packages")
+def list_maintenance_packages(db: Session = Depends(get_db)) -> list[dict[str, object]]:
+    setting = db.get(WorkshopSetting, PACKAGE_SETTING_KEY)
+    return list(setting.value.get("items", [])) if setting else []
+
+
+@admin_router.post("/maintenance-packages", status_code=status.HTTP_201_CREATED)
+def create_maintenance_package(data: MaintenancePackageCreate, db: Session = Depends(get_db)) -> dict[str, object]:
+    setting = db.get(WorkshopSetting, PACKAGE_SETTING_KEY) or WorkshopSetting(key=PACKAGE_SETTING_KEY, value={"items": []})
+    items = deepcopy(list(setting.value.get("items", [])))
+    package = {"id": f"PKG-{uuid.uuid4().hex[:10].upper()}", **data.model_dump(), "active": True, "created_at": datetime.now(UTC).isoformat()}
+    items.append(package); setting.value = {"items": items}; db.add(setting)
+    db.add(FlowEvent(module="MARKETING", action="MAINTENANCE_PACKAGE_CREATED", item_reference=package["id"], actor=audit_actor("marketing"), result="SUCCESS", metadata_json={"points": package["points"], "service": package["service"]}))
+    db.commit(); return package
 
 
 def _campaigns(db: Session) -> tuple[WorkshopSetting, list[dict[str, object]]]:
@@ -66,7 +93,12 @@ def list_campaigns(db: Session = Depends(get_db)) -> list[dict[str, object]]:
 @admin_router.post("/campaigns", status_code=status.HTTP_201_CREATED)
 def create_campaign(data: CampaignCreate, db: Session = Depends(get_db)) -> dict[str, object]:
     setting, items = _campaigns(db); identifier = str(uuid.uuid4()); base = slugify(data.title)[:60] or "campania"
-    campaign = {"id": identifier, **data.model_dump(), "slug": f"{base}-{identifier[:7]}", "status": "DRAFT", "media_url": None,
+    payload = data.model_dump()
+    if payload.get("promo_code"):
+        payload["promo_code"] = str(payload["promo_code"]).upper()
+        if any(str(item.get("promo_code") or "").upper() == payload["promo_code"] for item in items):
+            raise HTTPException(status_code=409, detail="El código promocional ya existe")
+    campaign = {"id": identifier, **payload, "slug": f"{base}-{identifier[:7]}", "status": "DRAFT", "media_url": None,
                 "media_type": None, "created_at": datetime.now(UTC).isoformat()}
     items.insert(0, campaign); setting.value = {"items": items}; db.add(setting); db.commit()
     return {**campaign, "clicks": 0, "public_path": f"/c/{campaign['slug']}"}

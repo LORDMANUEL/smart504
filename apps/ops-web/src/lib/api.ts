@@ -647,7 +647,9 @@ export async function getAdminDocument(token: string, path: string): Promise<Blo
 }
 
 export const getCampaigns = (token: string) => api<MarketingCampaign[]>('/api/v1/operations/marketing/campaigns', { token });
-export const createCampaign = (token: string, payload: { title: string; description: string; audience: string; valid_from?: string; valid_until?: string; price_from?: number; call_to_action?: string; tv_enabled?: boolean; display_seconds?: number }) => api<MarketingCampaign>('/api/v1/operations/marketing/campaigns', { token, method: 'POST', body: JSON.stringify(payload) });
+export const createCampaign = (token: string, payload: { title: string; description: string; audience: string; valid_from?: string; valid_until?: string; price_from?: number; call_to_action?: string; tv_enabled?: boolean; display_seconds?: number; promo_code?: string; discount_percent?: number; store_banner?: boolean }) => api<MarketingCampaign>('/api/v1/operations/marketing/campaigns', { token, method: 'POST', body: JSON.stringify(payload) });
+export const getMaintenancePackages = (token: string) => api<import('../types').MaintenancePackage[]>('/api/v1/operations/marketing/maintenance-packages', { token });
+export const createMaintenancePackage = (token: string, payload: { name: string; description: string; points: number; service: string }) => api<import('../types').MaintenancePackage>('/api/v1/operations/marketing/maintenance-packages', { token, method: 'POST', body: JSON.stringify(payload) });
 export const publishCampaign = (token: string, id: string) => api<MarketingCampaign>(`/api/v1/operations/marketing/campaigns/${id}/publish`, { token, method: 'POST' });
 export const getPublicCampaigns = () => api<MarketingCampaign[]>('/api/v1/marketing/campaigns', { token: '' });
 export async function uploadCampaignMedia(token: string, id: string, file: File): Promise<MarketingCampaign> {

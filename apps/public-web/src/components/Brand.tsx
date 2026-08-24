@@ -3,7 +3,7 @@ import { useBranding } from '../lib/branding';
 export function Brand({ compact = false }: { compact?: boolean }) {
   const branding = useBranding();
   const logoSource = branding.seasonal_theme_enabled && branding.seasonal_theme_code === 'PATRIA_SEPTEMBER'
-    ? '/brand/smartdiag504-logo-header.png'
+    ? '/brand/smartdiag504-logo-patria.png'
     : branding.logo_url;
   return (
     <span className={`brand ${compact ? 'brand--compact' : ''}`} aria-label={branding.display_name}>

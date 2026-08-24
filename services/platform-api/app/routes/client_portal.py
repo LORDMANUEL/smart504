@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
-from app.models import CatalogProduct, ClientUser, Customer, FlowEvent, Payment, Quote, Vehicle, VehicleHistoryEvent, WorkOrder
+from app.models import CatalogProduct, ClientUser, Customer, FlowEvent, Payment, Quote, Vehicle, VehicleHistoryEvent, WorkOrder, WorkshopSetting
 from app.client_auth import require_client
 from app.schemas import ProductRead
 from app.services.vehicle_fitment import compatible_products
@@ -35,6 +35,24 @@ class ClientProfileUpdate(BaseModel):
     credit_requested: bool = False
     credit_amount: int | None = Field(default=None, ge=1000, le=1000000)
     new_password: str | None = Field(default=None, min_length=10, max_length=128)
+
+
+class LoyaltyRedemption(BaseModel):
+    package_id: str = Field(min_length=2, max_length=80)
+    vehicle_id: str = Field(min_length=2, max_length=80)
+    idempotency_key: str = Field(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._:-]+$")
+
+
+DEFAULT_MAINTENANCE_PACKAGES = [
+    {"id": "BASIC_OIL", "name": "Cambio de aceite esencial", "description": "Aceite, filtro e inspección de niveles.", "points": 1200, "service": "Mantenimiento preventivo"},
+    {"id": "BRAKE_CHECK", "name": "Revisión preventiva de frenos", "description": "Inspección visual, medición y reporte.", "points": 850, "service": "Frenos y suspensión"},
+    {"id": "FULL_DIAG", "name": "Diagnóstico electrónico", "description": "Escaneo, pruebas dirigidas e informe.", "points": 1800, "service": "Diagnóstico electrónico"},
+]
+
+
+def _maintenance_packages(db: Session) -> list[dict[str, object]]:
+    setting = db.get(WorkshopSetting, "maintenance_packages")
+    return list(setting.value.get("items", [])) if setting and setting.value.get("items") else DEFAULT_MAINTENANCE_PACKAGES
 
 
 def _profile(user: ClientUser) -> dict[str, object]:
@@ -117,6 +135,35 @@ def dashboard(client_user: ClientUser = Depends(require_client), db: Session = D
                    "detail": item["message"], "status": item["delivery_status"]} for item in notifications)
     return {"profile": _profile(client_user), "vehicles": [_vehicle_payload(v, histories) for v in vehicles],
             "alerts": alerts, "quotes": quote_items, "invoices": invoices, "notifications": notifications}
+
+
+@router.get("/maintenance-packages")
+def maintenance_packages(client_user: ClientUser = Depends(require_client), db: Session = Depends(get_db)) -> list[dict[str, object]]:
+    return [{**item, "available": client_user.loyalty_enabled and client_user.loyalty_points >= int(item["points"])} for item in _maintenance_packages(db)]
+
+
+@router.post("/loyalty/redeem", status_code=status.HTTP_201_CREATED)
+def redeem_loyalty(data: LoyaltyRedemption, client_user: ClientUser = Depends(require_client), db: Session = Depends(get_db)) -> dict[str, object]:
+    existing = db.scalar(select(FlowEvent).where(FlowEvent.module == "LOYALTY", FlowEvent.action == "POINTS_REDEEMED", FlowEvent.item_reference == data.idempotency_key))
+    if existing:
+        return existing.metadata_json
+    vehicle = db.scalar(select(Vehicle).where(Vehicle.id == data.vehicle_id, Vehicle.customer_id == client_user.customer_id, Vehicle.organization_id == client_user.organization_id))
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehículo no encontrado")
+    package = next((item for item in _maintenance_packages(db) if item["id"] == data.package_id), None)
+    if package is None:
+        raise HTTPException(status_code=404, detail="Paquete de mantenimiento no encontrado")
+    user = db.get(ClientUser, client_user.id)
+    points = int(package["points"])
+    if user is None or not user.loyalty_enabled:
+        raise HTTPException(status_code=403, detail="El programa de puntos no está habilitado")
+    if user.loyalty_points < points:
+        raise HTTPException(status_code=409, detail="Puntos insuficientes")
+    user.loyalty_points -= points
+    payload = {"status": "RESERVED", "package_id": package["id"], "package_name": package["name"], "vehicle_id": vehicle.id, "remaining_points": user.loyalty_points}
+    db.add(FlowEvent(module="LOYALTY", action="POINTS_REDEEMED", item_reference=data.idempotency_key, actor=f"client:{user.id}", result="SUCCESS", metadata_json=payload))
+    db.commit()
+    return payload
 
 
 @router.post("/vehicles", status_code=status.HTTP_201_CREATED)

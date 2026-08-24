@@ -44,6 +44,7 @@ describe('CheckoutDrawer', () => {
       <CheckoutDrawer
         open
         cart={[product, product]}
+        initialPromoCode="PATRIA504"
         onClose={() => undefined}
         onRemove={() => undefined}
         onCompleted={() => undefined}
@@ -60,6 +61,7 @@ describe('CheckoutDrawer', () => {
     expect(vi.mocked(createStoreOrder).mock.calls[0][0].items).toEqual([
       { product_id: 'product-1', quantity: 2 },
     ]);
+    expect(vi.mocked(createStoreOrder).mock.calls[0][0].promo_code).toBe('PATRIA504');
     expect(await screen.findByText('WEB-20260812-ABC12345')).toBeInTheDocument();
   });
 });

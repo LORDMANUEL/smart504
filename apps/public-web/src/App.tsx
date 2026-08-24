@@ -9,10 +9,10 @@ import { ChatWidget } from './components/ChatWidget';
 import { CheckoutDrawer } from './components/CheckoutDrawer';
 import { AccessHub, CustomerAccess, CustomerPortal } from './components/CustomerExperience';
 import { ProductCard } from './components/ProductCard';
-import { getProducts, getVehicleFitment } from './lib/api';
+import { getProducts, getStorePromotions, getVehicleFitment } from './lib/api';
 import { useBranding } from './lib/branding';
 import { seasonalThemes } from './lib/seasonalThemes';
-import type { Product, VehicleFitment } from './types';
+import type { Product, StorePromotion, VehicleFitment } from './types';
 import './styles.css';
 
 
@@ -70,6 +70,22 @@ const process = [
 const businessPhone = (import.meta.env.VITE_BUSINESS_PHONE ?? '').trim() || 'Teléfono por confirmar';
 const businessEmail = (import.meta.env.VITE_BUSINESS_EMAIL ?? '').trim() || 'info@smartdiag504.com';
 const businessAddress = (import.meta.env.VITE_BUSINESS_ADDRESS ?? '').trim() || 'San Pedro Sula, Honduras';
+
+function PatrioticSplash({ active }: { active: boolean }) {
+  const [visible, setVisible] = useState(() => active && sessionStorage.getItem('smartdiag-patria-welcome') !== 'seen');
+  useEffect(() => {
+    if (!visible) return undefined;
+    sessionStorage.setItem('smartdiag-patria-welcome', 'seen');
+    const timer = window.setTimeout(() => setVisible(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
+  if (!visible) return null;
+  return <div className="patriotic-splash" role="status" aria-label="Bienvenida del mes de la patria" onClick={() => setVisible(false)}>
+    <img src="/images/seasonal/patria-welcome.gif" alt="Fiestas patrias de Honduras" width="420" height="260" />
+    <span>Toque para continuar</span>
+  </div>;
+}
+
 function PublicLanding() {
   const [menuOpen, setMenuOpen] = useState(false);
   const branding = useBranding();
@@ -96,6 +112,7 @@ function PublicLanding() {
 
   return (
     <div className="site-shell">
+      <PatrioticSplash active={isPatriaTheme} />
       {seasonalTheme ? (
         <aside className={`seasonal-banner seasonal-banner--${branding.seasonal_theme_code.toLowerCase()}`} aria-label={`Tema especial: ${seasonalTheme.shortLabel}`}>
           <div className="seasonal-banner__flag" aria-hidden="true"><i /><i /><i /><span className="seasonal-banner__stars"><b /><b /><b /><b /><b /></span></div>
@@ -266,6 +283,8 @@ function PublicLanding() {
 }
 
 function PartsStorefront() {
+  const branding = useBranding();
+  const isPatriaTheme = branding.seasonal_theme_enabled && branding.seasonal_theme_code === 'PATRIA_SEPTEMBER';
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
   const [vin, setVin] = useState('');
@@ -275,6 +294,10 @@ function PartsStorefront() {
   const [catalogState, setCatalogState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [cart, setCart] = useState<Product[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [promotions, setPromotions] = useState<StorePromotion[]>([]);
+  const [promoCode, setPromoCode] = useState('');
+
+  useEffect(() => { void getStorePromotions().then(setPromotions).catch(() => setPromotions([])); }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -305,12 +328,19 @@ function PartsStorefront() {
   const cartTotal = useMemo(() => cart.reduce((total, item) => total + Number(item.display_price), 0), [cart]);
 
   return <div className="site-shell store-page">
+    <PatrioticSplash active={isPatriaTheme} />
     <a className="skip-link" href="#catalogo-principal">Saltar al catálogo</a>
     <header className="site-header"><div className="container site-header__inner">
       <a href="/lading" className="brand-link"><Brand /></a>
       <nav className="site-nav"><a href="/lading">Taller</a><a href="/lading/loginclie">Mi vehículo</a></nav>
       <div className="site-header__actions"><button className="cart-button" type="button" onClick={() => setCheckoutOpen(true)} aria-label={`Carrito con ${cart.length} artículos`}><ShoppingBag size={19} /><span>{cart.length}</span></button><a className="button button--client" href="/lading/loginclie">Ingresar</a></div>
     </div></header>
+    {promotions.filter((item) => item.store_banner !== false).slice(0, 1).map((promotion) => <aside className="store-promotion-banner" key={promotion.id}>
+      {promotion.media_url && promotion.media_type === 'IMAGE' ? <img src={promotion.media_url} alt="" loading="eager" decoding="async" /> : null}
+      <div><small>{promotion.audience}</small><strong>{promotion.title}</strong><span>{promotion.description}</span></div>
+      {promotion.discount_percent ? <b>{promotion.discount_percent}% menos</b> : null}
+      {promotion.promo_code ? <button type="button" onClick={() => { setPromoCode(promotion.promo_code ?? ''); setCheckoutOpen(true); }}>Usar código {promotion.promo_code}</button> : <a href={promotion.public_path}>{promotion.call_to_action}</a>}
+    </aside>)}
     <main className="section catalog-section" id="catalogo-principal" tabIndex={-1}><div className="container">
       <div className="store-heading"><h1>Encuentre el repuesto correcto.</h1><p>Valide un vehículo registrado o busque libremente por pieza. Nunca inferimos compatibilidad de un VIN desconocido.</p></div>
       <div className="fitment-search-grid">
@@ -327,7 +357,7 @@ function PartsStorefront() {
       <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} onAdd={(item) => setCart((current) => [...current, item])} />)}</div>
       {cart.length > 0 && <div className="cart-summary" role="status"><span>{cart.length} artículo(s)</span><strong>{new Intl.NumberFormat('es-HN', { style: 'currency', currency: 'HNL' }).format(cartTotal)}</strong><button type="button" onClick={() => setCheckoutOpen(true)}>Solicitar pedido <ArrowRight size={17} /></button></div>}
     </div></main>
-    <CheckoutDrawer open={checkoutOpen} cart={cart} onClose={() => setCheckoutOpen(false)} onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))} onCompleted={() => setCart([])} />
+    <CheckoutDrawer open={checkoutOpen} cart={cart} initialPromoCode={promoCode} onClose={() => setCheckoutOpen(false)} onRemove={(productId) => setCart((current) => current.filter((item) => item.id !== productId))} onCompleted={() => setCart([])} />
   </div>;
 }
 

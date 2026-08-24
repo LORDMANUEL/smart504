@@ -8,6 +8,7 @@ from PIL import Image
 from fastapi_users.password import PasswordHelper
 from app.models import CatalogProduct, ClientUser, Customer, Vehicle
 from app.request_context import worker_identity
+from sqlalchemy import select
 
 
 def _login(client, monkeypatch) -> dict[str, str]:
@@ -115,6 +116,21 @@ def test_client_portal_persists_vehicle_and_prints_quote(
     assert quote["number"] in html.text
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF-")
+
+
+def test_client_redeems_points_for_vehicle_maintenance(client, client_account, db) -> None:
+    user = db.scalar(select(ClientUser).where(ClientUser.email == client_account["email"]))
+    user.loyalty_enabled = True
+    user.loyalty_points = 2000
+    db.commit()
+    assert client.post("/api/v1/client-auth/login", data={"username": client_account["email"], "password": client_account["password"]}).status_code == 204
+    packages = client.get("/api/v1/client-portal/maintenance-packages")
+    assert packages.status_code == 200
+    package = next(item for item in packages.json() if item["id"] == "BASIC_OIL")
+    assert package["available"] is True
+    redemption = client.post("/api/v1/client-portal/loyalty/redeem", json={"package_id": package["id"], "vehicle_id": client_account["vehicle"].id, "idempotency_key": "redeem-basic-oil-001"})
+    assert redemption.status_code == 201
+    assert redemption.json()["remaining_points"] == 800
 
 
 def test_client_fitment_uses_persisted_catalog_and_rejects_other_tenant_vehicle(
