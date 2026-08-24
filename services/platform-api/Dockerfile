@@ -7,6 +7,7 @@ RUN pip install /tmp/smartdiag_domain
 COPY services/platform-api/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 COPY services/platform-api/ .
+COPY apps/public-web/public/brand/smartdiag504-logo.png ./assets/smartdiag504-logo.png
 RUN mkdir -p /var/lib/smartdiag/media && chown -R 10001:10001 /srv/platform-api /var/lib/smartdiag
 USER 10001:10001
 EXPOSE 8000

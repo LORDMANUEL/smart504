@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import shutil
 from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy import select
 
+from app.config import get_settings
 from app.db import SessionLocal
 from app.models import Branch, DocumentTemplate, DocumentTemplateVersion, FlowEvent, ManagementDocument, WarehouseLocation, WorkshopSetting
 
@@ -34,6 +37,26 @@ table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#17181c;c
 .signatures{display:flex;justify-content:space-between;gap:28px;margin-top:42px}.signature{width:45%;border-top:1px solid #17181c;text-align:center;padding-top:5px}
 footer{border-top:1px solid #d9dde5;margin-top:26px;padding-top:8px;color:#626773;font-size:8pt;text-align:center}
 """
+
+
+def ensure_brand_asset(db) -> None:
+    """Copy the canonical logo to private media for offline-safe HTML/PDF output."""
+    settings = get_settings()
+    source = Path("/srv/platform-api/assets/smartdiag504-logo.png")
+    target = Path(settings.media_root) / "branding" / "smartdiag504-logo.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if source.is_file() and (not target.is_file() or source.read_bytes() != target.read_bytes()):
+        shutil.copyfile(source, target)
+    setting = db.get(WorkshopSetting, f"branding:{ORGANIZATION}")
+    values = dict(setting.value or {}) if setting else {}
+    values.setdefault("display_name", "SmartDiag504")
+    values["logo_url"] = f"{settings.public_media_base_url.rstrip('/')}/branding/smartdiag504-logo.png"
+    values["logo_dark_url"] = values["logo_url"]
+    values["favicon_url"] = values["logo_url"]
+    if setting is None:
+        db.add(WorkshopSetting(key=f"branding:{ORGANIZATION}", value=values))
+    else:
+        setting.value = values
 
 
 def body(title: str, description: str, rows_variable: str) -> str:
@@ -101,6 +124,7 @@ def ensure_operational_settings(db, branch: Branch) -> None:
 
 def main() -> int:
     with SessionLocal() as db:
+        ensure_brand_asset(db)
         branch = ensure_branch_and_warehouses(db)
         templates = ensure_templates(db)
         ensure_operational_settings(db, branch)
