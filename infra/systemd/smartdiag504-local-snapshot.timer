@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily SmartDiag504 local snapshot schedule
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 America/Tegucigalpa
+Persistent=true
+RandomizedDelaySec=15m
+Unit=smartdiag504-local-snapshot.service
+
+[Install]
+WantedBy=timers.target
