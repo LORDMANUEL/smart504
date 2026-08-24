@@ -10,7 +10,14 @@
 6. Abra `/lading` en una ventana privada y valide escritorio y móvil.
 7. Para retirarlo, desactive **Tema temporal**. No hace falta desplegar nuevamente.
 
-El catálogo incluye doce temas. Las animaciones son decorativas, no ocultan llamadas a reservar/comprar y se desactivan automáticamente cuando el visitante solicita movimiento reducido.
+El catálogo incluye doce temas. Septiembre, octubre, noviembre y diciembre tienen identidad visual propia:
+
+- **Septiembre patrio:** bandera azul y blanca con entrada ondulada, confeti azul y blanco de una sola reproducción y acentos azules en la landing.
+- **Octubre de prevención:** paleta naranja de inspección preventiva y mensaje centrado en detectar fallas a tiempo.
+- **Noviembre de oportunidades:** negro, rojo SmartDiag504 y mensajes de promociones verificadas, sin alterar precios desde la landing.
+- **Diciembre de viajes seguros:** vino y dorado suave para promover revisión antes de viajar.
+
+Las animaciones son decorativas, se ejecutan una sola vez, usan únicamente `transform` y `opacity`, no ocultan llamadas a reservar/comprar y se desactivan automáticamente cuando el visitante solicita movimiento reducido. El tema modifica presentación y texto promocional; nunca inventario, precio, impuestos, reserva ni disponibilidad.
 
 ## Probar el asistente sin repetir datos
 
@@ -43,4 +50,3 @@ Esta prueba sólo lee landing, catálogo y marca. La venta masiva transaccional 
 ## Evidencia y capturas
 
 Las capturas de aceptación deben guardarse en `docs/evidence/2026-08-24/`: landing con tema, editor administrativo, conversación contextual, cabeceras HTTP y resumen k6. Nunca deben mostrar contraseñas, tokens ni datos reales de clientes.
-

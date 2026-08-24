@@ -83,7 +83,19 @@ function PublicLanding() {
 
   return (
     <div className="site-shell">
-      {seasonalTheme ? <aside className="patria-banner" aria-label="Tema especial del mes"><span className="patria-star" aria-hidden="true">{seasonalTheme.symbol}</span><div><strong>{branding.seasonal_theme_title || seasonalTheme.title}</strong><small>{branding.seasonal_theme_message || seasonalTheme.message}</small></div><span className="patria-ribbon" aria-hidden="true" /></aside> : null}
+      {seasonalTheme ? (
+        <aside className={`seasonal-banner seasonal-banner--${branding.seasonal_theme_code.toLowerCase()}`} aria-label={`Tema especial: ${seasonalTheme.shortLabel}`}>
+          <div className="seasonal-banner__flag" aria-hidden="true"><i /><i /><i /></div>
+          <span className="seasonal-banner__symbol" aria-hidden="true">{seasonalTheme.symbol}</span>
+          <div className="seasonal-banner__copy">
+            <strong>{branding.seasonal_theme_title || seasonalTheme.title}</strong>
+            <small>{branding.seasonal_theme_message || seasonalTheme.message}</small>
+          </div>
+          <div className="seasonal-banner__decor" aria-hidden="true">
+            {Array.from({ length: 9 }, (_, index) => <i key={index} />)}
+          </div>
+        </aside>
+      ) : null}
       <header className="site-header">
         <div className="container site-header__inner">
           <a href="#inicio" className="brand-link"><Brand /></a>

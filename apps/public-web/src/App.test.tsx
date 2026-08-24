@@ -38,6 +38,7 @@ describe('SmartDiag504 public site', () => {
     expect(screen.getByRole('link', { name: /reservar diagnóstico/i })).toHaveAttribute('href', '#reservar');
     expect(screen.getAllByRole('link', { name: /comprar repuestos/i })[0]).toHaveAttribute('href', '/lading/repuestos');
     expect(screen.getByText(/mes de la patria/i)).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: /honduras, mes de la patria/i })).toHaveClass('seasonal-banner--patria_september');
   });
 
   it('filters catalog by search text', async () => {
