@@ -56,6 +56,7 @@ REQUIRED_SERVICES = {
     "ops-web-b",
     "platform-migrate",
     "platform-seed",
+    "platform-bootstrap",
     "platform-api-a",
     "platform-api-b",
     "ai-gateway-a",
@@ -80,7 +81,7 @@ REQUIRED_SERVICES = {
     "frappe-scheduler",
     "backup-runner",
 }
-ONE_SHOT_SERVICES = {"platform-migrate", "platform-seed", "frappe-configurator", "frappe-site-init"}
+ONE_SHOT_SERVICES = {"platform-migrate", "platform-seed", "platform-bootstrap", "frappe-configurator", "frappe-site-init"}
 PRIVATE_SERVICES = {
     "postgres",
     "redis-platform",

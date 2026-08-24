@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     smtp_from_email: str = "notificaciones@smartdiag504.com"
     external_backup_configured: bool = False
+    local_backup_configured: bool = False
+    local_restore_tested: bool = False
     fiscal_hardware_certified: bool = False
     offsite_restore_tested: bool = False
     whatsapp_webhook_url: str | None = None

@@ -120,6 +120,15 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis-platform: {condition: service_healthy}
+  platform-bootstrap:
+    image: ${PLATFORM_API_IMAGE}@${PLATFORM_API_IMAGE_DIGEST}
+    restart: "no"
+    exclude_from_hc: true
+    environment: *api-environment
+    command: ["python", "-m", "scripts.bootstrap_production_defaults"]
+    volumes: ["platform-media:/var/lib/smartdiag/media"]
+    depends_on:
+      platform-migrate: {condition: service_completed_successfully}
   platform-api-a:
     image: ${PLATFORM_API_IMAGE}@${PLATFORM_API_IMAGE_DIGEST}
     restart: unless-stopped
@@ -130,7 +139,7 @@ services:
       NODE_ROLE: platform-api
     volumes: ["platform-media:/var/lib/smartdiag/media"]
     depends_on:
-      platform-migrate: {condition: service_completed_successfully}
+      platform-bootstrap: {condition: service_completed_successfully}
       frappe-frontend: {condition: service_healthy}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
@@ -150,7 +159,7 @@ services:
       NODE_ROLE: platform-api
     volumes: ["platform-media:/var/lib/smartdiag/media"]
     depends_on:
-      platform-migrate: {condition: service_completed_successfully}
+      platform-bootstrap: {condition: service_completed_successfully}
       frappe-frontend: {condition: service_healthy}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]

@@ -43,6 +43,24 @@ def production_readiness(db: Session = Depends(get_db)) -> dict[str, object]:
         ManagementDocument.document_type == "CAI",
         ManagementDocument.status == "ACTIVE",
     )) or 0
+    fiscal_configuration = db.scalar(select(ManagementDocument).where(
+        ManagementDocument.organization_id == organization_id,
+        ManagementDocument.document_type == "FISCAL_CONFIGURATION",
+        ManagementDocument.status == "ACTIVE",
+    ).order_by(ManagementDocument.updated_at.desc()).limit(1))
+    preprinted_invoice_ready = bool(
+        fiscal_configuration
+        and fiscal_configuration.metadata_json.get("mode") == "PREPRINTED"
+        and fiscal_configuration.metadata_json.get("requires_manual_fiscal_control") is True
+    )
+    hardware = db.get(WorkshopSetting, "production_hardware")
+    hardware_ready = bool(
+        hardware
+        and hardware.value.get("printer_model") == "Epson EcoTank L3250"
+        and hardware.value.get("pos_mode") == "BANK_TERMINAL_EXTERNAL"
+        and hardware.value.get("pos_reference_required") is True
+        and hardware.value.get("card_data_storage") is False
+    )
     published_templates = db.scalar(select(func.count()).select_from(DocumentTemplate).where(
         DocumentTemplate.organization_id == organization_id,
         DocumentTemplate.active.is_(True),
@@ -54,12 +72,12 @@ def production_readiness(db: Session = Depends(get_db)) -> dict[str, object]:
         {"code": "TENANT", "label": "Empresa con sucursal activa", "ready": active_branches > 0, "owner": "ADMINISTRADOR"},
         {"code": "CASHIER_SECRET", "label": "Código privado de caja en secretos", "ready": len(cashier_code) >= 6 and cashier_code != "5040", "owner": "ADMINISTRADOR"},
         {"code": "DOCUMENTS", "label": "Plantillas de impresión publicadas", "ready": published_templates >= 2, "owner": "ADMINISTRADOR"},
-        {"code": "FISCAL", "label": "CAI/rangos aceptados por contador", "ready": fiscal_documents > 0, "owner": "CONTADOR"},
+        {"code": "FISCAL", "label": "Modo fiscal configurado: CAI o factura preimpresa", "ready": fiscal_documents > 0 or preprinted_invoice_ready, "owner": "CONTADOR"},
         {"code": "SMTP", "label": "Correo transaccional SMTP", "ready": bool(settings.smtp_host and settings.smtp_from_email), "owner": "PROVEEDOR"},
         {"code": "PRIVATE_STORAGE", "label": "Evidencias en almacenamiento S3 privado", "ready": settings.private_evidence_backend.lower() == "s3", "owner": "INFRAESTRUCTURA"},
         {"code": "MALWARE_SCAN", "label": "Escaneo antimalware obligatorio para archivos", "ready": settings.malware_scanner_required and bool(settings.malware_scanner_host), "owner": "SEGURIDAD"},
-        {"code": "FISCAL_HARDWARE", "label": "Impresora/POS fiscal aceptado", "ready": settings.fiscal_hardware_certified, "owner": "CONTADOR/HARDWARE"},
-        {"code": "OFFSITE_BACKUP", "label": "Respaldo externo y restauración probada", "ready": settings.external_backup_configured and settings.offsite_restore_tested, "owner": "INFRAESTRUCTURA"},
+        {"code": "FISCAL_HARDWARE", "label": "Epson L3250 y POS bancario con referencia", "ready": settings.fiscal_hardware_certified or hardware_ready, "owner": "CONTADOR/HARDWARE"},
+        {"code": "BACKUP", "label": "Respaldo y restauración probada (local aceptado con riesgo)", "ready": (settings.external_backup_configured and settings.offsite_restore_tested) or (settings.local_backup_configured and settings.local_restore_tested), "owner": "INFRAESTRUCTURA"},
     ]
     return {
         "environment": settings.environment,

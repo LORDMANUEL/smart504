@@ -122,7 +122,7 @@ compose=(docker compose --env-file "${ENV_FILE}" "${profiles[@]}" -f compose.yam
 
 if [[ ${SKIP_BUILD} -eq 0 ]]; then
   "${compose[@]}" build \
-    public-web-a ops-web-a platform-migrate ai-gateway-a heartbeat-a alerts-worker-a \
+    public-web-a ops-web-a platform-migrate platform-bootstrap ai-gateway-a heartbeat-a alerts-worker-a \
     backup-runner frappe-configurator
 fi
 

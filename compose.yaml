@@ -219,6 +219,16 @@ services:
       - platform-media:/var/lib/smartdiag/media
     depends_on:
       platform-migrate: {condition: service_completed_successfully}
+
+  platform-bootstrap:
+    <<: *platform-image
+    restart: "no"
+    environment: *platform-environment
+    command: ["python", "-m", "scripts.bootstrap_production_defaults"]
+    volumes:
+      - platform-media:/var/lib/smartdiag/media
+    depends_on:
+      platform-seed: {condition: service_completed_successfully}
     networks: [app, data, egress]
 
   platform-api-a:
@@ -231,7 +241,7 @@ services:
     volumes:
       - platform-media:/var/lib/smartdiag/media
     depends_on:
-      platform-seed: {condition: service_completed_successfully}
+      platform-bootstrap: {condition: service_completed_successfully}
     networks: [app, data, egress]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
@@ -250,7 +260,7 @@ services:
     volumes:
       - platform-media:/var/lib/smartdiag/media
     depends_on:
-      platform-seed: {condition: service_completed_successfully}
+      platform-bootstrap: {condition: service_completed_successfully}
     networks: [app, data, egress]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
