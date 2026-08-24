@@ -14,6 +14,8 @@ class ProviderResult:
 
 
 class LLMProvider(Protocol):
+    async def ready(self) -> bool: ...
+
     async def complete(
         self,
         *,
@@ -25,6 +27,9 @@ class LLMProvider(Protocol):
 
 
 class DemoProvider:
+    async def ready(self) -> bool:
+        return True
+
     async def complete(
         self,
         *,
@@ -52,6 +57,16 @@ class OpenAICompatibleProvider:
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+
+    async def ready(self) -> bool:
+        """Verify the configured provider without spending generation tokens."""
+        headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+        async with httpx.AsyncClient(timeout=min(self.timeout, 8.0)) as client:
+            response = await client.get(f"{self.base_url}/models", headers=headers)
+            response.raise_for_status()
+        payload = response.json()
+        models = payload.get("data", []) if isinstance(payload, dict) else []
+        return any(str(item.get("id")) == self.model for item in models if isinstance(item, dict))
 
     async def complete(
         self,

@@ -66,14 +66,25 @@ def create_app(*, testing: bool = False) -> FastAPI:
         return {"status": "ok", "service": "ai-gateway", "version": "0.4.0"}
 
     @application.get("/ready")
-    def ready() -> dict[str, object]:
+    async def ready() -> dict[str, object]:
         expected = os.getenv("AI_GATEWAY_INTERNAL_TOKEN", "")
         environment = os.getenv("ENVIRONMENT", "development").casefold()
         if not expected or (environment == "production" and expected.startswith("change-")):
             raise HTTPException(status_code=503, detail="AI gateway secret is not configured")
+        provider = application.state.provider
+        if environment == "production" and isinstance(provider, DemoProvider):
+            raise HTTPException(status_code=503, detail="Production LLM provider is not configured")
+        try:
+            provider_ready = await provider.ready()
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail="Configured LLM provider is unavailable") from exc
+        if not provider_ready:
+            raise HTTPException(status_code=503, detail="Configured LLM model is unavailable")
         return {
             "status": "ready",
-            "provider": type(application.state.provider).__name__,
+            "provider": type(provider).__name__,
+            "model": getattr(provider, "model", "demo"),
+            "provider_status": "ok",
             "retriever": type(application.state.retriever).__name__,
         }
 
